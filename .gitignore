@@ -1,0 +1,45 @@
+# Build
+build/
+dist/
+*.spec
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Temp / Upload
+uploads/
+*.tmp
+
+# Excel temp files
+~$*.xlsx
+~$*.xls
+
+# Database (user-specific data)
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Sample / test data
+sample_*.xlsx
+NewExport_*.xlsx
+test_output.xlsx
+
+# Generated preview
+icon_preview.png
+
+# Installer
+gh_installer.msi
+
+# Claude
+.claude/

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Manager</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Issue Manager</h1>
+        <div class="date"><span id="currentDate"></span> &nbsp;|&nbsp; {{ version }}</div>
+    </div>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>Excel Upload</h2>
+            <div class="upload-grid">
+                <div class="upload-box-wrapper">
+                    <div class="input-toggle">
+                        <button class="toggle-btn active" id="vendorToggleFile" onclick="toggleVendorMode('file')">File Upload</button>
+                        <button class="toggle-btn" id="vendorTogglePaste" onclick="toggleVendorMode('paste')">Copy & Paste</button>
+                    </div>
+                    <div class="upload-box" id="vendorBox" onclick="document.getElementById('vendorFile').click()">
+                        <div class="icon">&#128196;</div>
+                        <label>Vendor Document (with vendor)</label>
+                        <div style="font-size:0.82em;color:#888;">Click or drag & drop .xls/.xlsx</div>
+                        <div class="filename" id="vendorName"></div>
+                        <input type="file" id="vendorFile" accept=".xls,.xlsx">
+                    </div>
+                    <div class="paste-box" id="vendorPasteBox" style="display:none">
+                        <label>Vendor Document (with vendor)</label>
+                        <div style="font-size:0.82em;color:#888;margin-bottom:8px;">Excel에서 헤더 포함 전체 선택 후 Ctrl+V</div>
+                        <textarea id="vendorPasteArea" placeholder="Excel data here (Ctrl+V)..."></textarea>
+                    </div>
+                </div>
+                <div class="upload-box" id="systemBox" onclick="document.getElementById('systemFile').click()">
+                    <div class="icon">&#128202;</div>
+                    <label>System Export (NewExport)</label>
+                    <div style="font-size:0.82em;color:#888;">Click or drag & drop .xls/.xlsx</div>
+                    <div class="filename" id="systemName"></div>
+                    <input type="file" id="systemFile" accept=".xls,.xlsx">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary" id="compareBtn" disabled onclick="doCompare()">Compare</button>
+                <button class="btn btn-download" id="downloadBtn" style="display:none" onclick="doDownload()">Download Updated Excel</button>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <span>Processing...</span>
+                </div>
+            </div>
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="dashboard" id="dashboard">
+            <div class="summary-cards">
+                <div class="card total">
+                    <div class="number" id="statTotal">0</div>
+                    <div class="label">Total Active</div>
+                </div>
+                <div class="card ongoing">
+                    <div class="number" id="statOngoing">0</div>
+                    <div class="label">Ongoing (common)</div>
+                </div>
+                <div class="card new">
+                    <div class="number" id="statNew">0</div>
+                    <div class="label">New / Re-assigned</div>
+                </div>
+                <div class="card completed">
+                    <div class="number" id="statCompleted">0</div>
+                    <div class="label">Resolved</div>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box"><h3>Status</h3><div id="chartStatus" class="bar-chart"></div></div>
+                <div class="chart-box"><h3>Days since Opened</h3><div id="chartDays" class="bar-chart"></div></div>
+                <div class="chart-box"><h3>Module</h3><div id="chartModule" class="bar-chart"></div></div>
+                <div class="chart-box"><h3>Owner</h3><div id="chartOwner" class="bar-chart"></div></div>
+            </div>
+
+            <div class="table-section">
+                <h3>Issue Details</h3>
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="showTab('active')">Active (<span id="tabCountActive">0</span>)</button>
+                    <button class="tab-btn" onclick="showTab('resolved')">Resolved (<span id="tabCountResolved">0</span>)</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="issue-table">
+                        <thead>
+                            <tr>
+                                <th>No</th><th>ID</th><th>Headline</th><th>Status</th>
+                                <th>Module</th><th>Owner</th><th>Days</th><th>Tag</th><th>Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody id="issueTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="timeline-section">
+                <h3>Status Timeline (History)</h3>
+                <div id="timelineContainer"><div style="color:#999;font-size:0.9em;">Compare를 실행하면 이력이 기록됩니다.</div></div>
+            </div>
+
+            <div class="bottleneck-grid">
+                <div class="timeline-section">
+                    <h3>Average Days per Status</h3>
+                    <div id="avgStatusChart" class="bar-chart"></div>
+                </div>
+                <div class="timeline-section">
+                    <h3>Stalled Issues (7+ days in same status)</h3>
+                    <div id="stalledList"><div style="color:#999;font-size:0.9em;">No stalled issues</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
