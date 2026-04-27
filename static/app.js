@@ -232,6 +232,58 @@ function renderBarChart(containerId, data) {
     });
 }
 
+function renderDonutChart(containerId, data) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    const entries = Object.entries(data).sort((a,b) => b[1] - a[1]);
+    if (!entries.length) {
+        container.innerHTML = '<div style="color:#999;font-size:0.9em;">No data</div>';
+        return;
+    }
+    const total = entries.reduce((s, e) => s + e[1], 0);
+    const size = 140;
+    const cx = size / 2, cy = size / 2, r = 54, inner = 32;
+
+    // Build SVG arcs
+    let angle = -90;
+    let arcs = '';
+    entries.forEach(([label, value], i) => {
+        const pct = value / total;
+        const sweep = pct * 360;
+        const startAngle = angle;
+        const endAngle = angle + sweep;
+        const largeArc = sweep > 180 ? 1 : 0;
+        const rad1 = startAngle * Math.PI / 180;
+        const rad2 = endAngle * Math.PI / 180;
+        const color = COLORS[i % COLORS.length];
+
+        // Outer arc
+        const x1 = cx + r * Math.cos(rad1), y1 = cy + r * Math.sin(rad1);
+        const x2 = cx + r * Math.cos(rad2), y2 = cy + r * Math.sin(rad2);
+        // Inner arc
+        const ix1 = cx + inner * Math.cos(rad2), iy1 = cy + inner * Math.sin(rad2);
+        const ix2 = cx + inner * Math.cos(rad1), iy2 = cy + inner * Math.sin(rad1);
+
+        const path = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${inner} ${inner} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
+        arcs += `<path d="${path}" fill="${color}" stroke="white" stroke-width="1.5"><title>${label}: ${value} (${Math.round(pct*100)}%)</title></path>`;
+        angle = endAngle;
+    });
+
+    // Center total
+    const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="18" font-weight="700">${total}</text></svg>`;
+
+    // Legend
+    let legend = '<div class="donut-legend">';
+    entries.forEach(([label, value], i) => {
+        const color = COLORS[i % COLORS.length];
+        const pct = Math.round((value / total) * 100);
+        legend += `<div class="donut-legend-item"><span class="donut-legend-color" style="background:${color}"></span><span class="donut-legend-label">${label || '(empty)'}</span><span class="donut-legend-value">${value} (${pct}%)</span></div>`;
+    });
+    legend += '</div>';
+
+    container.innerHTML = `<div class="donut-wrapper">${svg}${legend}</div>`;
+}
+
 function renderTable(issues) {
     const tbody = document.getElementById('issueTableBody');
     tbody.innerHTML = '';
@@ -603,9 +655,9 @@ async function loadDashboard() {
         document.getElementById('tabCountResolved').textContent = 0;
 
         // Charts
-        renderBarChart('chartStatus', summary.status || {});
-        renderBarChart('chartModule', summary.module || {});
-        renderBarChart('chartOwner', summary.owner || {});
+        renderDonutChart('chartStatus', summary.status || {});
+        renderDonutChart('chartModule', summary.module || {});
+        renderDonutChart('chartOwner', summary.owner || {});
         document.getElementById('chartDays').innerHTML = '<div style="color:#999;font-size:0.9em;">Compare 실행 시 표시됩니다</div>';
 
         // Table - convert DB format to display format
@@ -683,10 +735,10 @@ async function doCompare() {
         document.getElementById('tabCountResolved').textContent = data.stats.summary.resolved;
 
         // Charts
-        renderBarChart('chartStatus', data.stats.status);
+        renderDonutChart('chartStatus', data.stats.status);
         renderBarChart('chartDays', data.stats.days_distribution);
-        renderBarChart('chartModule', data.stats.module);
-        renderBarChart('chartOwner', data.stats.owner);
+        renderDonutChart('chartModule', data.stats.module);
+        renderDonutChart('chartOwner', data.stats.owner);
 
         // Table
         renderTable(data.common.concat(data.system_only));

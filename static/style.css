@@ -450,6 +450,47 @@ body {
     transition: width 0.5s ease;
 }
 
+/* === Donut Chart === */
+.donut-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+.donut-wrapper svg {
+    flex-shrink: 0;
+}
+.donut-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 4px;
+}
+.donut-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82em;
+}
+.donut-legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.donut-legend-label {
+    flex: 1;
+    color: #444;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.donut-legend-value {
+    color: #888;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
 /* === Tables === */
 .table-section {
     background: white;
