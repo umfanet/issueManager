@@ -62,11 +62,12 @@ def compare_issues(vendor_issues, system_issues, known_map=None):
     system_only = []
     for id_val in sorted(system_only_ids):
         s = system_by_id[id_val]
+        sys_status = (s.get('Status', '') or '').strip()
         prev = known_map.get(id_val)
-        if prev:
+        if sys_status.lower() == 'rejected' or prev:
             status = 'Reopened'
-            module = prev.get('module', '') or 'N/A'
-            owner = prev.get('owner', '')
+            module = prev.get('module', '') or 'N/A' if prev else 'N/A'
+            owner = prev.get('owner', '') if prev else ''
         else:
             status = 'New'
             module = 'N/A'
