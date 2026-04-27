@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 from config import VERSION, PORT, MAX_UPLOAD_SIZE
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
-from exporter import export_updated_vendor_file, export_vendor_template, export_issue_list
+from exporter import export_vendor_template, export_issue_list
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
@@ -32,7 +32,6 @@ app = Flask(
     static_folder=os.path.join(BASE_PATH, 'static'),
 )
 app.config['MAX_CONTENT_LENGTH'] = MAX_UPLOAD_SIZE
-app.config['LAST_RESULTS'] = {}  # keyed by project_id
 
 # Use temp directory for uploads (works regardless of exe location)
 UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'issue_manager_uploads')
@@ -182,9 +181,6 @@ def compare():
         result = compare_issues(vendor_issues, system_issues)
         stats = generate_statistics(result)
 
-        # Save result for export (keyed by project)
-        app.config['LAST_RESULTS'][project_id] = result
-
         # Record status history in DB
         record_date = request.form.get('record_date', '').strip() or None
         all_active = result['common'] + result['system_only']
@@ -201,24 +197,6 @@ def compare():
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
-
-
-@app.route('/download', methods=['GET'])
-def download():
-    project_id = request.args.get('project_id', 1, type=int)
-    result = app.config['LAST_RESULTS'].get(project_id)
-
-    if not result:
-        return jsonify({'error': '먼저 비교를 수행해주세요.'}), 400
-
-    output_path = os.path.join(UPLOAD_FOLDER, 'updated_vendor.xlsx')
-    export_updated_vendor_file(result, output_path)
-
-    return send_file(
-        output_path,
-        as_attachment=True,
-        download_name=f'updated_vendor_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-    )
 
 
 @app.route('/export-issues', methods=['POST'])

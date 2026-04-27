@@ -233,6 +233,7 @@ body {
     color: white;
 }
 .btn-download-sm:hover { background: #218838; }
+/* btn-download-sm kept for potential future use */
 .btn-copy-sm {
     padding: 6px 16px;
     border: none;

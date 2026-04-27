@@ -751,7 +751,6 @@ async function doCompare() {
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('dashboardExportBar').style.display = 'flex';
         document.getElementById('exportBtn').style.display = 'inline-block';
-        document.getElementById('downloadBtn').style.display = 'inline-block';
 
         // Reload timeline & bottleneck only (don't overwrite compare data)
         loadTimelineData();
@@ -763,10 +762,6 @@ async function doCompare() {
         loading.classList.remove('active');
         compareBtn.disabled = false;
     }
-}
-
-function doDownload() {
-    window.location.href = `/download?project_id=${currentProjectId || 1}`;
 }
 
 async function doExportIssues() {
