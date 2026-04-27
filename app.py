@@ -266,11 +266,27 @@ def timeline():
         return jsonify({'error': str(e)}), 500
 
 
+def get_local_ip():
+    """Get local network IP address."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return '127.0.0.1'
+
+
 def open_browser():
     webbrowser.open(f'http://127.0.0.1:{PORT}')
 
 
 if __name__ == '__main__':
+    local_ip = get_local_ip()
+    print(f'\n  Local:   http://127.0.0.1:{PORT}')
+    print(f'  Network: http://{local_ip}:{PORT}\n')
     if '--no-browser' not in sys.argv:
         threading.Timer(1.0, open_browser).start()
-    app.run(debug=False, port=PORT)
+    app.run(debug=False, port=PORT, host='0.0.0.0')
