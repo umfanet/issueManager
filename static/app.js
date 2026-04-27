@@ -677,8 +677,8 @@ async function loadDashboard() {
             Module: i.module,
             Owner: i.owner,
             Tag: i.tag,
-            'Days since Opened': '',
-            Comments: [],
+            'Days since Opened': i.days_since_opened || '',
+            Comments: i.comments ? i.comments.split('\n').filter(c => c) : [],
         }));
         renderTable(tableIssues);
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));

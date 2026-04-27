@@ -80,6 +80,10 @@ def _migrate(conn):
         conn.execute('ALTER TABLE issues ADD COLUMN project_id INTEGER NOT NULL DEFAULT 1')
     if 'last_record_date' not in columns:
         conn.execute("ALTER TABLE issues ADD COLUMN last_record_date TEXT NOT NULL DEFAULT ''")
+    if 'comments' not in columns:
+        conn.execute("ALTER TABLE issues ADD COLUMN comments TEXT NOT NULL DEFAULT ''")
+    if 'days_since_opened' not in columns:
+        conn.execute("ALTER TABLE issues ADD COLUMN days_since_opened TEXT NOT NULL DEFAULT ''")
 
     # Create index after columns are guaranteed to exist
     conn.execute('CREATE INDEX IF NOT EXISTS idx_issues_project ON issues(project_id)')
@@ -225,7 +229,7 @@ def get_project_issues(project_id):
 
     if latest:
         rows = conn.execute(
-            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
+            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date, comments, days_since_opened
                FROM issues
                WHERE project_id = ? AND last_record_date = ?
                ORDER BY first_seen_date''',
@@ -233,7 +237,7 @@ def get_project_issues(project_id):
         ).fetchall()
     else:
         rows = conn.execute(
-            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
+            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date, comments, days_since_opened
                FROM issues
                WHERE project_id = ?
                ORDER BY first_seen_date''',
@@ -312,6 +316,9 @@ def upsert_issues(issues, record_date=None, project_id=1):
         module = issue.get('Module', '')
         owner = issue.get('Owner', '')
         tag = issue.get('Tag', '')
+        comments_list = issue.get('Comments', [])
+        comments = '\n'.join(comments_list) if isinstance(comments_list, list) else str(comments_list or '')
+        days = issue.get('Days since Opened', '')
 
         # Check if issue exists
         existing = conn.execute(
@@ -322,9 +329,9 @@ def upsert_issues(issues, record_date=None, project_id=1):
         if existing is None:
             # New issue
             conn.execute(
-                '''INSERT INTO issues (id, project_id, headline, module, owner, tag, current_status, first_seen_date, last_updated, last_record_date)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (issue_id, project_id, headline, module, owner, tag, status, today, now, today)
+                '''INSERT INTO issues (id, project_id, headline, module, owner, tag, current_status, first_seen_date, last_updated, last_record_date, comments, days_since_opened)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (issue_id, project_id, headline, module, owner, tag, status, today, now, today, comments, days)
             )
             # Start first status history
             if status:
@@ -339,10 +346,11 @@ def upsert_issues(issues, record_date=None, project_id=1):
             # Existing issue - update fields, only update last_record_date if this date is newer
             conn.execute(
                 '''UPDATE issues SET headline=?, module=?, owner=?, tag=?, current_status=?, last_updated=?, project_id=?,
-                          last_record_date = MAX(COALESCE(last_record_date, ''), ?)
+                          last_record_date = MAX(COALESCE(last_record_date, ''), ?),
+                          comments=?, days_since_opened=?
                    WHERE id=?''',
                 (headline, module or existing['module'] if hasattr(existing, '__getitem__') else module,
-                 owner, tag, status, now, project_id, today, issue_id)
+                 owner, tag, status, now, project_id, today, comments, days, issue_id)
             )
             counts['updated'] += 1
 
