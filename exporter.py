@@ -173,6 +173,40 @@ def export_vendor_template(system_issues, output_path):
     wb.save(output_path)
 
 
+def export_issue_list(issues, output_path):
+    """Export issue list from DB data (no compare needed)."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Issue List'
+
+    headers = ['No', 'ID', 'Headline', 'Status', 'Module', 'Owner', 'Tag']
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+        cell.border = THIN_BORDER
+
+    for idx, issue in enumerate(issues, 1):
+        row = idx + 1
+        values = [
+            idx,
+            issue.get('id', ''),
+            issue.get('headline', ''),
+            issue.get('current_status', ''),
+            issue.get('module', ''),
+            issue.get('owner', ''),
+            issue.get('tag', ''),
+        ]
+        for col_idx, val in enumerate(values, 1):
+            cell = ws.cell(row=row, column=col_idx, value=val)
+            cell.border = THIN_BORDER
+            cell.alignment = Alignment(vertical='center', wrap_text=True)
+
+    _auto_column_width(ws)
+    wb.save(output_path)
+
+
 def _auto_column_width(ws):
     for col in ws.columns:
         max_len = 0

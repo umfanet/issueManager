@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 from config import VERSION, PORT, MAX_UPLOAD_SIZE
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
-from exporter import export_updated_vendor_file, export_vendor_template
+from exporter import export_updated_vendor_file, export_vendor_template, export_issue_list
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
@@ -219,6 +219,29 @@ def download():
         as_attachment=True,
         download_name=f'updated_vendor_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
     )
+
+
+@app.route('/export-issues', methods=['GET'])
+def export_issues():
+    """Export current issue list from DB (no compare needed)."""
+    project_id = request.args.get('project_id', 1, type=int)
+    try:
+        issues = get_project_issues(project_id)
+        if not issues:
+            return jsonify({'error': '내보낼 이슈가 없습니다.'}), 400
+
+        output_path = os.path.join(UPLOAD_FOLDER, 'issue_list.xlsx')
+        export_issue_list(issues, output_path)
+
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=f'issue_list_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+        )
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/generate-template', methods=['POST'])

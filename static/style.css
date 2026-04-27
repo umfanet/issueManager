@@ -200,6 +200,11 @@ body {
     color: white;
 }
 .btn-download:hover { background: #218838; }
+.btn-export {
+    background: #6f42c1;
+    color: white;
+}
+.btn-export:hover { background: #5a32a3; }
 .btn-template {
     background: #0d6efd;
     color: white;

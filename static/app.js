@@ -114,6 +114,29 @@ async function addProject() {
     }
 }
 
+async function renameProject() {
+    if (!currentProjectId) return;
+    const select = document.getElementById('projectSelect');
+    const current = select.options[select.selectedIndex].textContent;
+    const name = prompt('프로젝트 이름 변경:', current);
+    if (!name || !name.trim() || name.trim() === current) return;
+    try {
+        const resp = await fetch(`/api/projects/${currentProjectId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim()}),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            alert(data.error || '이름 변경 실패');
+            return;
+        }
+        await loadProjects();
+    } catch (e) {
+        alert('오류: ' + e.message);
+    }
+}
+
 async function deleteProject() {
     if (!currentProjectId || currentProjectId === 1) {
         alert('Default 프로젝트는 삭제할 수 없습니다.');
@@ -450,6 +473,7 @@ async function loadDashboard() {
 
         if (issues.length === 0) {
             // No issues yet - show dashboard only if milestones exist
+            document.getElementById('exportBtn').style.display = 'none';
             if ((data.milestones || []).length > 0) {
                 document.getElementById('dashboard').classList.add('active');
             } else {
@@ -493,8 +517,9 @@ async function loadDashboard() {
         renderTimelines(data.timelines);
         renderBottleneck(data.bottleneck);
 
-        // Show dashboard
+        // Show dashboard & export button
         document.getElementById('dashboard').classList.add('active');
+        document.getElementById('exportBtn').style.display = 'inline-block';
     } catch (e) {
         console.error('Dashboard load error:', e);
     }
@@ -576,6 +601,10 @@ async function doCompare() {
 
 function doDownload() {
     window.location.href = `/download?project_id=${currentProjectId || 1}`;
+}
+
+function doExportIssues() {
+    window.location.href = `/export-issues?project_id=${currentProjectId || 1}`;
 }
 
 async function doGenerateTemplate() {
