@@ -539,75 +539,84 @@ body {
     color: #1e3a5f;
     margin-bottom: 16px;
 }
-/* Gantt Chart */
-.gantt-chart {
+/* Dot-Line Timeline */
+.tl-chart {
     width: 100%;
 }
-.gantt-legend {
+.tl-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 14px;
+    margin-bottom: 16px;
     font-size: 0.8em;
     color: #555;
 }
-.gantt-legend-item {
+.tl-legend-item {
     display: flex;
     align-items: center;
     gap: 5px;
 }
-.gantt-legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
+.tl-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     display: inline-block;
 }
-.gantt-legend-today {
+.tl-legend-today {
     width: 12px;
     height: 12px;
     border-left: 2px dashed #dc3545;
     display: inline-block;
 }
-.gantt-body {
+.tl-body {
     display: flex;
-    position: relative;
 }
-.gantt-labels-col {
+.tl-labels-col {
     flex-shrink: 0;
     width: 200px;
     min-width: 200px;
 }
-.gantt-label-header {
+.tl-label-header {
     height: 26px;
 }
-.gantt-label-row {
-    display: flex;
-    align-items: center;
-    height: 32px;
-    border-bottom: 1px solid #f5f5f5;
-}
-.gantt-label {
+.tl-label-row {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 1px;
+    height: 52px;
+    padding-right: 10px;
+    border-bottom: 1px solid #f0f2f5;
     overflow: hidden;
-    padding-right: 8px;
 }
-.gantt-tracks-scroll {
+.tl-id {
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #1e3a5f;
+    white-space: nowrap;
+}
+.tl-headline {
+    font-size: 0.72em;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tl-tracks-scroll {
     flex: 1;
     overflow-x: auto;
     overflow-y: hidden;
 }
-.gantt-tracks-inner {
+.tl-tracks-inner {
     min-width: 400px;
 }
-.gantt-axis {
+.tl-axis {
     position: relative;
     height: 22px;
     border-bottom: 1px solid #ddd;
     margin-bottom: 4px;
 }
-.gantt-axis-label {
+.tl-axis-label {
     position: absolute;
     font-size: 0.7em;
     color: #999;
@@ -615,73 +624,81 @@ body {
     bottom: 2px;
     white-space: nowrap;
 }
-.gantt-track-row {
+.tl-track-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 32px;
-    border-bottom: 1px solid #f5f5f5;
+    height: 52px;
+    border-bottom: 1px solid #f0f2f5;
 }
-.gantt-track-row:hover {
+.tl-track-row:hover {
     background: #fafbfc;
 }
-.gantt-id {
-    font-size: 0.78em;
-    font-weight: 700;
-    color: #1e3a5f;
-    white-space: nowrap;
-}
-.gantt-headline {
-    font-size: 0.72em;
-    color: #888;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.gantt-track {
+.tl-track {
     flex: 1;
     position: relative;
-    height: 22px;
-    background: #f0f2f5;
-    border-radius: 3px;
+    height: 44px;
 }
-.gantt-seg {
+/* Connecting line between dots */
+.tl-line {
+    position: absolute;
+    top: 14px;
+    height: 0;
+    border-top: 2px solid;
+}
+.tl-line-active {
+    border-top-style: solid;
+    opacity: 0.5;
+}
+/* Status dot */
+.tl-dot {
+    position: absolute;
+    top: 9px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid;
+    transform: translateX(-6px);
+    z-index: 3;
+    cursor: default;
+    transition: transform 0.15s;
+}
+.tl-dot:hover {
+    transform: translateX(-6px) scale(1.4);
+    z-index: 5;
+}
+/* Current status: larger dot with ring */
+.tl-dot-current {
+    width: 16px;
+    height: 16px;
+    top: 7px;
+    transform: translateX(-8px);
+    box-shadow: 0 0 0 3px rgba(255,255,255,1), 0 0 0 5px currentColor;
+}
+.tl-dot-current:hover {
+    transform: translateX(-8px) scale(1.3);
+}
+/* Status label below dot */
+.tl-dot-label {
+    position: absolute;
+    top: 28px;
+    transform: translateX(-50%);
+    font-size: 0.65em;
+    color: #777;
+    white-space: nowrap;
+    pointer-events: none;
+}
+/* Today marker */
+.tl-today-line {
     position: absolute;
     top: 0;
-    height: 100%;
-    border-radius: 3px;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    cursor: default;
-    transition: opacity 0.15s;
-    min-width: 4px;
-}
-.gantt-seg:hover {
-    opacity: 0.85;
-    z-index: 1;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
-}
-.gantt-seg-label {
-    font-size: 0.68em;
-    font-weight: 600;
-    color: white;
-    padding: 0 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-.gantt-today {
-    position: absolute;
-    top: -4px;
-    bottom: -4px;
+    bottom: 0;
     width: 0;
     border-left: 2px dashed #dc3545;
     z-index: 2;
     pointer-events: none;
 }
-.gantt-days {
+.tl-days {
     min-width: 32px;
     text-align: right;
     font-size: 0.78em;

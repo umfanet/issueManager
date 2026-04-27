@@ -259,7 +259,7 @@ function renderTimelines(timelines) {
         return;
     }
 
-    // Find global date range across all issues
+    // Find global date range
     let globalStart = null, globalEnd = null;
     const todayDate = new Date(todayStr);
 
@@ -279,87 +279,97 @@ function renderTimelines(timelines) {
 
     const totalDays = Math.max(Math.ceil((globalEnd - globalStart) / 86400000), 1);
 
-    // Generate date labels for the axis
+    // Date axis labels
     const dateLabels = [];
     const labelStep = totalDays <= 14 ? 1 : totalDays <= 30 ? 3 : totalDays <= 60 ? 7 : 14;
     for (let d = 0; d <= totalDays; d += labelStep) {
         const dt = new Date(globalStart.getTime() + d * 86400000);
-        const label = `${dt.getMonth()+1}/${dt.getDate()}`;
-        const pct = (d / totalDays) * 100;
-        dateLabels.push({label, pct});
+        dateLabels.push({label: `${dt.getMonth()+1}/${dt.getDate()}`, pct: (d / totalDays) * 100});
     }
 
-    let axisHtml = '<div class="gantt-axis">';
+    let axisHtml = '<div class="tl-axis">';
     dateLabels.forEach(dl => {
-        axisHtml += `<span class="gantt-axis-label" style="left:${dl.pct}%">${dl.label}</span>`;
+        axisHtml += `<span class="tl-axis-label" style="left:${dl.pct}%">${dl.label}</span>`;
     });
     axisHtml += '</div>';
 
-    // Today marker position
-    const todayOffset = Math.ceil((todayDate - globalStart) / 86400000);
-    const todayPct = Math.min((todayOffset / totalDays) * 100, 100);
+    // Today position
+    const todayPct = Math.min((Math.ceil((todayDate - globalStart) / 86400000) / totalDays) * 100, 100);
+    const minTrackWidth = Math.max(totalDays * 14, 400);
 
-    // Minimum track width: at least 12px per day for readability
-    const minTrackWidth = Math.max(totalDays * 12, 400);
-
+    // Build rows
     let labelsHtml = '';
     let tracksHtml = '';
     timelines.forEach(t => {
-        let segHtml = '';
-        t.history.forEach(h => {
-            const start = new Date(h.started_at);
-            const end = h.ended_at ? new Date(h.ended_at) : todayDate;
-            const startDay = Math.max(Math.ceil((start - globalStart) / 86400000), 0);
-            const duration = Math.max(Math.ceil((end - start) / 86400000), 1);
-            const leftPct = (startDay / totalDays) * 100;
-            const widthPct = Math.max((duration / totalDays) * 100, 1.5);
-            const color = getStatusColor(h.status);
-            const days = h.days || duration;
-            const label = `${h.status} (${days}d)`;
-            const showLabel = widthPct > 8;
-            segHtml += `<div class="gantt-seg" style="left:${leftPct}%;width:${widthPct}%;background:${color}" title="${label}">${showLabel ? `<span class="gantt-seg-label">${h.status}</span>` : ''}</div>`;
-        });
-
         const totalIssueDays = t.history.reduce((s, h) => s + (h.days || 1), 0);
 
+        // Dots and connecting lines
+        let dotsHtml = '';
+        t.history.forEach((h, i) => {
+            const start = new Date(h.started_at);
+            const startDay = Math.max(Math.ceil((start - globalStart) / 86400000), 0);
+            const leftPct = (startDay / totalDays) * 100;
+            const color = getStatusColor(h.status);
+            const days = h.days || 1;
+            const isLast = (i === t.history.length - 1);
+            const dotSize = isLast ? 'tl-dot-current' : '';
+            const dateStr = h.started_at;
+            const tooltip = `${h.status} (${days}d)\n${dateStr}`;
+
+            // Connecting line to next dot (or to today for last)
+            if (i < t.history.length - 1) {
+                const nextStart = new Date(t.history[i+1].started_at);
+                const nextDay = Math.max(Math.ceil((nextStart - globalStart) / 86400000), 0);
+                const nextPct = (nextDay / totalDays) * 100;
+                dotsHtml += `<div class="tl-line" style="left:${leftPct}%;width:${nextPct - leftPct}%;border-color:${color}"></div>`;
+            } else if (!h.ended_at) {
+                // Last segment, ongoing - line to today
+                dotsHtml += `<div class="tl-line tl-line-active" style="left:${leftPct}%;width:${todayPct - leftPct}%;border-color:${color}"></div>`;
+            }
+
+            // Dot
+            dotsHtml += `<div class="tl-dot ${dotSize}" style="left:${leftPct}%;background:${color};border-color:${color}" title="${tooltip}"></div>`;
+
+            // Status label below dot
+            dotsHtml += `<span class="tl-dot-label" style="left:${leftPct}%">${escHtml(h.status)}</span>`;
+        });
+
         labelsHtml += `
-            <div class="gantt-label-row">
-                <div class="gantt-label">
-                    <span class="gantt-id">${escHtml(t.id)}</span>
-                    <span class="gantt-headline" title="${escHtml(t.headline)}">${escHtml(t.headline)}</span>
-                </div>
+            <div class="tl-label-row">
+                <span class="tl-id">${escHtml(t.id)}</span>
+                <span class="tl-headline" title="${escHtml(t.headline)}">${escHtml(t.headline)}</span>
             </div>`;
 
         tracksHtml += `
-            <div class="gantt-track-row">
-                <div class="gantt-track">
-                    ${segHtml}
-                    <div class="gantt-today" style="left:${todayPct}%"></div>
+            <div class="tl-track-row">
+                <div class="tl-track">
+                    ${dotsHtml}
+                    <div class="tl-today-line" style="left:${todayPct}%"></div>
                 </div>
-                <span class="gantt-days">${totalIssueDays}d</span>
+                <span class="tl-days">${totalIssueDays}d</span>
             </div>`;
     });
 
-    // Status legend
+    // Legend
     const usedStatuses = new Set();
     timelines.forEach(t => t.history.forEach(h => usedStatuses.add(h.status)));
-    let legendHtml = '<div class="gantt-legend">';
+    let legendHtml = '<div class="tl-legend">';
     usedStatuses.forEach(s => {
-        legendHtml += `<span class="gantt-legend-item"><span class="gantt-legend-color" style="background:${getStatusColor(s)}"></span>${escHtml(s)}</span>`;
+        legendHtml += `<span class="tl-legend-item"><span class="tl-legend-dot" style="background:${getStatusColor(s)}"></span>${escHtml(s)}</span>`;
     });
-    legendHtml += `<span class="gantt-legend-item"><span class="gantt-legend-today"></span>Today</span>`;
+    legendHtml += `<span class="tl-legend-item"><span class="tl-legend-today"></span>Today</span>`;
     legendHtml += '</div>';
 
     container.innerHTML = `
-        <div class="gantt-chart">
+        <div class="tl-chart">
             ${legendHtml}
-            <div class="gantt-body">
-                <div class="gantt-labels-col">
-                    <div class="gantt-label-header"></div>
+            <div class="tl-body">
+                <div class="tl-labels-col">
+                    <div class="tl-label-header"></div>
                     ${labelsHtml}
                 </div>
-                <div class="gantt-tracks-scroll">
-                    <div class="gantt-tracks-inner" style="min-width:${minTrackWidth}px">
+                <div class="tl-tracks-scroll">
+                    <div class="tl-tracks-inner" style="min-width:${minTrackWidth}px">
                         ${axisHtml}
                         ${tracksHtml}
                     </div>
