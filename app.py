@@ -178,12 +178,16 @@ def compare():
             vendor_bytes = vendor_file.read()
             vendor_issues = parse_vendor_file(vendor_bytes, filename=vendor_file.filename)
         system_issues = parse_system_file(system_bytes, filename=system_file.filename)
-        known_map = get_known_issues_map()
+
+        record_date = request.form.get('record_date', '').strip() or None
+        from datetime import date as date_cls
+        current_date = record_date or date_cls.today().isoformat()
+
+        known_map = get_known_issues_map(before_date=current_date)
         result = compare_issues(vendor_issues, system_issues, known_map=known_map)
         stats = generate_statistics(result)
 
         # Record status history in DB
-        record_date = request.form.get('record_date', '').strip() or None
         all_active = result['common'] + result['system_only']
         db_counts = upsert_issues(all_active, record_date=record_date, project_id=project_id)
 
