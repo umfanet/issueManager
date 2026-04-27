@@ -20,6 +20,8 @@ uploads/
 
 # Database (user-specific data)
 *.db
+*.db-shm
+*.db-wal
 
 # IDE
 .vscode/
@@ -30,13 +32,8 @@ Thumbs.db
 Desktop.ini
 .DS_Store
 
-# Sample / test data
-sample_*.xlsx
-NewExport_*.xlsx
-test_output.xlsx
-
-# Generated preview
-icon_preview.png
+# Test data (generated)
+tests/test_data/
 
 # Installer
 gh_installer.msi
