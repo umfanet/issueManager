@@ -233,6 +233,18 @@ body {
     color: white;
 }
 .btn-download-sm:hover { background: #218838; }
+.btn-copy-sm {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fd7e14;
+    color: white;
+}
+.btn-copy-sm:hover { background: #e8690b; }
 .action-bar {
     display: flex;
     justify-content: space-between;

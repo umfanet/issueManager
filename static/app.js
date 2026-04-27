@@ -814,5 +814,107 @@ async function doGenerateTemplate() {
     }
 }
 
+// === Copy for Confluence ===
+function copyForConfluence() {
+    const cs = (k) => document.getElementById(k)?.textContent || '0';
+    const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
+
+    let html = '';
+
+    // Title
+    html += `<h2 style="color:#1e3a5f">Issue Manager - ${escHtml(projectName)} (${todayStr})</h2>`;
+
+    // Summary table
+    html += `<table style="border-collapse:collapse;margin-bottom:16px">
+        <tr>
+            <td style="padding:8px 20px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border:1px solid #ccc"><div style="font-size:1.5em">${cs('statTotal')}</div>Total Active</td>
+            <td style="padding:8px 20px;text-align:center;background:#e8f0fe;border:1px solid #ccc"><div style="font-size:1.5em;color:#0d6efd;font-weight:bold">${cs('statOngoing')}</div>Ongoing</td>
+            <td style="padding:8px 20px;text-align:center;background:#e8f8e8;border:1px solid #ccc"><div style="font-size:1.5em;color:#28a745;font-weight:bold">${cs('statNew')}</div>New</td>
+            <td style="padding:8px 20px;text-align:center;background:#f5f5f5;border:1px solid #ccc"><div style="font-size:1.5em;color:#6c757d;font-weight:bold">${cs('statCompleted')}</div>Resolved</td>
+        </tr>
+    </table>`;
+
+    // Milestones
+    const milestoneItems = document.querySelectorAll('.milestone-item');
+    if (milestoneItems.length > 0) {
+        html += `<h3 style="color:#1e3a5f">Milestones</h3>`;
+        html += `<table style="border-collapse:collapse;margin-bottom:16px">
+            <tr style="background:#4472C4;color:white"><th style="padding:6px 12px;border:1px solid #ccc">Phase</th><th style="padding:6px 12px;border:1px solid #ccc">Due Date</th><th style="padding:6px 12px;border:1px solid #ccc">D-Day</th></tr>`;
+        milestoneItems.forEach(item => {
+            const name = item.querySelector('.milestone-name')?.textContent || '';
+            const date = item.querySelector('.milestone-date')?.textContent || '';
+            const dday = item.querySelector('.milestone-dday')?.textContent || '';
+            const ddayEl = item.querySelector('.milestone-dday');
+            let color = '#333';
+            if (ddayEl?.classList.contains('dday-danger') || ddayEl?.classList.contains('dday-over')) color = '#dc3545';
+            else if (ddayEl?.classList.contains('dday-warn')) color = '#fd7e14';
+            else if (ddayEl?.classList.contains('dday-safe')) color = '#0d6efd';
+            html += `<tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600">${escHtml(name)}</td><td style="padding:6px 12px;border:1px solid #ccc">${escHtml(date)}</td><td style="padding:6px 12px;border:1px solid #ccc;font-weight:bold;color:${color}">${escHtml(dday)}</td></tr>`;
+        });
+        html += `</table>`;
+    }
+
+    // Status / Module / Owner distribution as simple tables
+    const chartBoxes = document.querySelectorAll('.chart-box');
+    const distTables = [];
+    chartBoxes.forEach(box => {
+        const title = box.querySelector('h3')?.textContent || '';
+        const legendItems = box.querySelectorAll('.donut-legend-item');
+        if (legendItems.length === 0) return;
+        let t = `<h3 style="color:#1e3a5f">${escHtml(title)}</h3>`;
+        t += `<table style="border-collapse:collapse;margin-bottom:12px">`;
+        legendItems.forEach(item => {
+            const colorEl = item.querySelector('.donut-legend-color');
+            const bg = colorEl?.style.background || '#ccc';
+            const label = item.querySelector('.donut-legend-label')?.textContent || '';
+            const value = item.querySelector('.donut-legend-value')?.textContent || '';
+            t += `<tr><td style="padding:4px 8px;border:1px solid #ccc"><span style="display:inline-block;width:10px;height:10px;background:${bg};border-radius:2px;margin-right:6px"></span>${escHtml(label)}</td><td style="padding:4px 8px;border:1px solid #ccc">${escHtml(value)}</td></tr>`;
+        });
+        t += `</table>`;
+        distTables.push(t);
+    });
+    if (distTables.length) {
+        html += distTables.join('');
+    }
+
+    // Issue table
+    const issueTable = document.querySelector('.issue-table');
+    if (issueTable) {
+        html += `<h3 style="color:#1e3a5f">Issue Details</h3>`;
+        html += `<table style="border-collapse:collapse;margin-bottom:16px;width:100%">`;
+        // Header
+        const ths = issueTable.querySelectorAll('thead th');
+        html += '<tr>';
+        ths.forEach(th => {
+            html += `<th style="padding:6px 10px;border:1px solid #ccc;background:#4472C4;color:white;font-size:0.9em">${th.textContent}</th>`;
+        });
+        html += '</tr>';
+        // Rows
+        const trs = issueTable.querySelectorAll('tbody tr');
+        trs.forEach((tr, i) => {
+            const bg = i % 2 === 0 ? '#fff' : '#f8f9fa';
+            html += `<tr style="background:${bg}">`;
+            tr.querySelectorAll('td').forEach(td => {
+                html += `<td style="padding:4px 8px;border:1px solid #ccc;font-size:0.85em">${td.textContent.trim()}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += `</table>`;
+    }
+
+    // Copy to clipboard as HTML
+    const blob = new Blob([html], {type: 'text/html'});
+    const clipItem = new ClipboardItem({'text/html': blob});
+    navigator.clipboard.write([clipItem]).then(() => {
+        const btn = document.querySelector('.btn-copy-sm');
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.background = '#28a745';
+        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+    }).catch(err => {
+        alert('복사 실패: ' + err.message);
+    });
+}
+
 // === Init ===
 loadProjects().then(() => loadDashboard());
