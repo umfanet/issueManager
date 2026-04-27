@@ -242,8 +242,8 @@ function renderDonutChart(containerId, data) {
         return;
     }
     const total = entries.reduce((s, e) => s + e[1], 0);
-    const svgSize = 300;
-    const cx = svgSize / 2, cy = svgSize / 2, r = 80, inner = 50, labelR = 110;
+    const svgSize = 360;
+    const cx = svgSize / 2, cy = svgSize / 2, r = 95, inner = 60, labelR = 130;
 
     let angle = -90;
     let arcs = '', labels = '';
