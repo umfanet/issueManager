@@ -179,7 +179,7 @@ def export_issue_list(issues, output_path):
     ws = wb.active
     ws.title = 'Issue List'
 
-    headers = ['No', 'ID', 'Headline', 'Status', 'Module', 'Owner', 'Tag']
+    headers = ['No', 'ID', 'Headline', 'Status', 'Comments', 'Module', 'Owner', 'Tag']
     for col_idx, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_idx, value=h)
         cell.fill = HEADER_FILL
@@ -194,6 +194,7 @@ def export_issue_list(issues, output_path):
             issue.get('id', ''),
             issue.get('headline', ''),
             issue.get('current_status', ''),
+            '',  # Comments
             issue.get('module', ''),
             issue.get('owner', ''),
             issue.get('tag', ''),
