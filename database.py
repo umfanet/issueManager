@@ -74,12 +74,14 @@ def _migrate(conn):
         (datetime.now().isoformat(),)
     )
 
-    # Add project_id column if missing (for DBs created before v0.5.0)
+    # Add columns if missing (for DBs created before v0.5.0+)
     columns = [row[1] for row in conn.execute('PRAGMA table_info(issues)').fetchall()]
     if 'project_id' not in columns:
         conn.execute('ALTER TABLE issues ADD COLUMN project_id INTEGER NOT NULL DEFAULT 1')
+    if 'last_record_date' not in columns:
+        conn.execute("ALTER TABLE issues ADD COLUMN last_record_date TEXT NOT NULL DEFAULT ''")
 
-    # Create index after column is guaranteed to exist
+    # Create index after columns are guaranteed to exist
     conn.execute('CREATE INDEX IF NOT EXISTS idx_issues_project ON issues(project_id)')
 
     conn.commit()
@@ -207,47 +209,71 @@ def delete_milestone(milestone_id):
 
 # === Issue Operations ===
 
-def get_project_issues(project_id):
-    """Get all issues for a project, grouped by current_status."""
-    conn = get_db()
-    rows = conn.execute(
-        '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
-           FROM issues
-           WHERE project_id = ?
-           ORDER BY first_seen_date''',
+def _latest_record_date(conn, project_id):
+    """Get the most recent record_date for a project."""
+    row = conn.execute(
+        "SELECT MAX(last_record_date) FROM issues WHERE project_id = ? AND last_record_date != ''",
         (project_id,)
-    ).fetchall()
+    ).fetchone()
+    return row[0] if row and row[0] else None
+
+
+def get_project_issues(project_id):
+    """Get active issues for a project (only those seen on the latest record date)."""
+    conn = get_db()
+    latest = _latest_record_date(conn, project_id)
+
+    if latest:
+        rows = conn.execute(
+            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
+               FROM issues
+               WHERE project_id = ? AND last_record_date = ?
+               ORDER BY first_seen_date''',
+            (project_id, latest)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
+               FROM issues
+               WHERE project_id = ?
+               ORDER BY first_seen_date''',
+            (project_id,)
+        ).fetchall()
+
     conn.close()
     return [dict(r) for r in rows]
 
 
 def get_project_summary(project_id):
-    """Get summary statistics for a project from DB."""
+    """Get summary statistics for a project (based on latest record date)."""
     conn = get_db()
+    latest = _latest_record_date(conn, project_id)
+    date_filter = "AND last_record_date = ?" if latest else ""
+    params = (project_id, latest) if latest else (project_id,)
 
     total = conn.execute(
-        'SELECT COUNT(*) FROM issues WHERE project_id = ?', (project_id,)
+        f'SELECT COUNT(*) FROM issues WHERE project_id = ? {date_filter}', params
     ).fetchone()[0]
 
     status_counts = conn.execute(
-        '''SELECT current_status, COUNT(*) as cnt
-           FROM issues WHERE project_id = ?
+        f'''SELECT current_status, COUNT(*) as cnt
+           FROM issues WHERE project_id = ? {date_filter}
            GROUP BY current_status ORDER BY cnt DESC''',
-        (project_id,)
+        params
     ).fetchall()
 
     module_counts = conn.execute(
-        '''SELECT module, COUNT(*) as cnt
-           FROM issues WHERE project_id = ?
+        f'''SELECT module, COUNT(*) as cnt
+           FROM issues WHERE project_id = ? {date_filter}
            GROUP BY module ORDER BY cnt DESC''',
-        (project_id,)
+        params
     ).fetchall()
 
     owner_counts = conn.execute(
-        '''SELECT owner, COUNT(*) as cnt
-           FROM issues WHERE project_id = ?
+        f'''SELECT owner, COUNT(*) as cnt
+           FROM issues WHERE project_id = ? {date_filter}
            GROUP BY owner ORDER BY cnt DESC''',
-        (project_id,)
+        params
     ).fetchall()
 
     conn.close()
@@ -296,9 +322,9 @@ def upsert_issues(issues, record_date=None, project_id=1):
         if existing is None:
             # New issue
             conn.execute(
-                '''INSERT INTO issues (id, project_id, headline, module, owner, tag, current_status, first_seen_date, last_updated)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                (issue_id, project_id, headline, module, owner, tag, status, today, now)
+                '''INSERT INTO issues (id, project_id, headline, module, owner, tag, current_status, first_seen_date, last_updated, last_record_date)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (issue_id, project_id, headline, module, owner, tag, status, today, now, today)
             )
             # Start first status history
             if status:
@@ -310,12 +336,13 @@ def upsert_issues(issues, record_date=None, project_id=1):
             counts['new'] += 1
 
         else:
-            # Existing issue - update fields
+            # Existing issue - update fields, only update last_record_date if this date is newer
             conn.execute(
-                '''UPDATE issues SET headline=?, module=?, owner=?, tag=?, current_status=?, last_updated=?, project_id=?
+                '''UPDATE issues SET headline=?, module=?, owner=?, tag=?, current_status=?, last_updated=?, project_id=?,
+                          last_record_date = MAX(COALESCE(last_record_date, ''), ?)
                    WHERE id=?''',
                 (headline, module or existing['module'] if hasattr(existing, '__getitem__') else module,
-                 owner, tag, status, now, project_id, issue_id)
+                 owner, tag, status, now, project_id, today, issue_id)
             )
             counts['updated'] += 1
 
