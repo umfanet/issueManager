@@ -635,10 +635,12 @@ body {
     overflow: hidden;
     cursor: default;
     transition: opacity 0.15s;
+    min-width: 4px;
 }
 .gantt-seg:hover {
     opacity: 0.85;
     z-index: 1;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
 }
 .gantt-seg-label {
     font-size: 0.68em;
@@ -648,6 +650,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 .gantt-today {
     position: absolute;

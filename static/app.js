@@ -281,7 +281,7 @@ function renderTimelines(timelines) {
 
     // Generate date labels for the axis
     const dateLabels = [];
-    const labelStep = totalDays <= 14 ? 1 : totalDays <= 30 ? 3 : 7;
+    const labelStep = totalDays <= 14 ? 1 : totalDays <= 30 ? 3 : totalDays <= 60 ? 7 : 14;
     for (let d = 0; d <= totalDays; d += labelStep) {
         const dt = new Date(globalStart.getTime() + d * 86400000);
         const label = `${dt.getMonth()+1}/${dt.getDate()}`;
@@ -310,8 +310,10 @@ function renderTimelines(timelines) {
             const leftPct = (startDay / totalDays) * 100;
             const widthPct = Math.max((duration / totalDays) * 100, 1.5);
             const color = getStatusColor(h.status);
-            const label = `${h.status} (${h.days || duration}d)`;
-            segHtml += `<div class="gantt-seg" style="left:${leftPct}%;width:${widthPct}%;background:${color}" title="${label}"><span class="gantt-seg-label">${h.status}</span></div>`;
+            const days = h.days || duration;
+            const label = `${h.status} (${days}d)`;
+            const showLabel = widthPct > 8;
+            segHtml += `<div class="gantt-seg" style="left:${leftPct}%;width:${widthPct}%;background:${color}" title="${label}">${showLabel ? `<span class="gantt-seg-label">${h.status}</span>` : ''}</div>`;
         });
 
         const totalIssueDays = t.history.reduce((s, h) => s + (h.days || 1), 0);
