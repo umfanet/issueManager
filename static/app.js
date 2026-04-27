@@ -259,29 +259,95 @@ function renderTimelines(timelines) {
         return;
     }
 
-    let html = '';
-    timelines.forEach(t => {
-        const totalDays = t.history.reduce((sum, h) => sum + (h.days || 1), 0);
+    // Find global date range across all issues
+    let globalStart = null, globalEnd = null;
+    const todayDate = new Date(todayStr);
 
-        let barHtml = '';
+    timelines.forEach(t => {
         t.history.forEach(h => {
-            const pct = Math.max(((h.days || 1) / totalDays) * 100, 3);
+            const start = new Date(h.started_at);
+            const end = h.ended_at ? new Date(h.ended_at) : todayDate;
+            if (!globalStart || start < globalStart) globalStart = start;
+            if (!globalEnd || end > globalEnd) globalEnd = end;
+        });
+    });
+
+    if (!globalStart) {
+        container.innerHTML = '<div style="color:#999;font-size:0.9em;">No history data yet.</div>';
+        return;
+    }
+
+    const totalDays = Math.max(Math.ceil((globalEnd - globalStart) / 86400000), 1);
+
+    // Generate date labels for the axis
+    const dateLabels = [];
+    const labelStep = totalDays <= 14 ? 1 : totalDays <= 30 ? 3 : 7;
+    for (let d = 0; d <= totalDays; d += labelStep) {
+        const dt = new Date(globalStart.getTime() + d * 86400000);
+        const label = `${dt.getMonth()+1}/${dt.getDate()}`;
+        const pct = (d / totalDays) * 100;
+        dateLabels.push({label, pct});
+    }
+
+    let axisHtml = '<div class="gantt-axis">';
+    dateLabels.forEach(dl => {
+        axisHtml += `<span class="gantt-axis-label" style="left:${dl.pct}%">${dl.label}</span>`;
+    });
+    axisHtml += '</div>';
+
+    // Today marker position
+    const todayOffset = Math.ceil((todayDate - globalStart) / 86400000);
+    const todayPct = Math.min((todayOffset / totalDays) * 100, 100);
+
+    let rowsHtml = '';
+    timelines.forEach(t => {
+        let segHtml = '';
+        t.history.forEach(h => {
+            const start = new Date(h.started_at);
+            const end = h.ended_at ? new Date(h.ended_at) : todayDate;
+            const startDay = Math.max(Math.ceil((start - globalStart) / 86400000), 0);
+            const duration = Math.max(Math.ceil((end - start) / 86400000), 1);
+            const leftPct = (startDay / totalDays) * 100;
+            const widthPct = Math.max((duration / totalDays) * 100, 1.5);
             const color = getStatusColor(h.status);
-            const label = h.days > 0 ? `${h.status} (${h.days}d)` : h.status;
-            barHtml += `<div class="timeline-segment" style="width:${pct}%;background:${color}" title="${label}"><span class="seg-label">${label}</span></div>`;
+            const label = `${h.status} (${h.days || duration}d)`;
+            segHtml += `<div class="gantt-seg" style="left:${leftPct}%;width:${widthPct}%;background:${color}" title="${label}"><span class="gantt-seg-label">${h.status}</span></div>`;
         });
 
-        html += `
-            <div class="timeline-item">
-                <div class="timeline-header">
-                    <span class="timeline-id">${escHtml(t.id)}</span>
-                    <span class="timeline-headline" title="${escHtml(t.headline)}">${escHtml(t.headline)}</span>
+        const totalIssueDays = t.history.reduce((s, h) => s + (h.days || 1), 0);
+
+        rowsHtml += `
+            <div class="gantt-row">
+                <div class="gantt-label">
+                    <span class="gantt-id">${escHtml(t.id)}</span>
+                    <span class="gantt-headline" title="${escHtml(t.headline)}">${escHtml(t.headline)}</span>
                 </div>
-                <div class="timeline-bar">${barHtml}</div>
+                <div class="gantt-track">
+                    ${segHtml}
+                    <div class="gantt-today" style="left:${todayPct}%"></div>
+                </div>
+                <span class="gantt-days">${totalIssueDays}d</span>
             </div>`;
     });
 
-    container.innerHTML = html;
+    // Status legend
+    const usedStatuses = new Set();
+    timelines.forEach(t => t.history.forEach(h => usedStatuses.add(h.status)));
+    let legendHtml = '<div class="gantt-legend">';
+    usedStatuses.forEach(s => {
+        legendHtml += `<span class="gantt-legend-item"><span class="gantt-legend-color" style="background:${getStatusColor(s)}"></span>${escHtml(s)}</span>`;
+    });
+    legendHtml += `<span class="gantt-legend-item"><span class="gantt-legend-today"></span>Today</span>`;
+    legendHtml += '</div>';
+
+    container.innerHTML = `
+        <div class="gantt-chart">
+            ${legendHtml}
+            <div class="gantt-body">
+                ${axisHtml}
+                ${rowsHtml}
+            </div>
+        </div>`;
 }
 
 function renderBottleneck(bottleneck) {
