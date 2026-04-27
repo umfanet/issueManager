@@ -642,7 +642,7 @@ body {
 /* Connecting line between dots */
 .tl-line {
     position: absolute;
-    top: 14px;
+    top: 15px;
     height: 0;
     border-top: 2px solid;
 }
@@ -653,40 +653,50 @@ body {
 /* Status dot */
 .tl-dot {
     position: absolute;
-    top: 9px;
-    width: 12px;
-    height: 12px;
+    top: 11px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     border: 2px solid;
-    transform: translateX(-6px);
+    transform: translateX(-4px);
     z-index: 3;
     cursor: default;
     transition: transform 0.15s;
 }
 .tl-dot:hover {
-    transform: translateX(-6px) scale(1.4);
+    transform: translateX(-4px) scale(1.5);
     z-index: 5;
 }
-/* Current status: larger dot with ring */
+/* Current status: slightly larger dot with subtle ring */
 .tl-dot-current {
-    width: 16px;
-    height: 16px;
-    top: 7px;
-    transform: translateX(-8px);
-    box-shadow: 0 0 0 3px rgba(255,255,255,1), 0 0 0 5px currentColor;
+    width: 10px;
+    height: 10px;
+    top: 10px;
+    transform: translateX(-5px);
+    box-shadow: 0 0 0 2px rgba(255,255,255,1), 0 0 0 3px currentColor;
 }
 .tl-dot-current:hover {
-    transform: translateX(-8px) scale(1.3);
+    transform: translateX(-5px) scale(1.4);
 }
-/* Status label below dot */
+/* Status label below dot - only show on hover to avoid overlap */
 .tl-dot-label {
     position: absolute;
-    top: 28px;
+    top: 26px;
     transform: translateX(-50%);
-    font-size: 0.65em;
-    color: #777;
+    font-size: 0.62em;
+    color: #999;
     white-space: nowrap;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.tl-track-row:hover .tl-dot-label {
+    opacity: 1;
+}
+.tl-dot-label-current {
+    opacity: 1;
+    color: #555;
+    font-weight: 600;
 }
 /* Today marker */
 .tl-today-line {

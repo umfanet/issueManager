@@ -330,8 +330,9 @@ function renderTimelines(timelines) {
             // Dot
             dotsHtml += `<div class="tl-dot ${dotSize}" style="left:${leftPct}%;background:${color};border-color:${color}" title="${tooltip}"></div>`;
 
-            // Status label below dot
-            dotsHtml += `<span class="tl-dot-label" style="left:${leftPct}%">${escHtml(h.status)}</span>`;
+            // Status label below dot (only current status always visible)
+            const labelClass = isLast ? 'tl-dot-label tl-dot-label-current' : 'tl-dot-label';
+            dotsHtml += `<span class="${labelClass}" style="left:${leftPct}%">${escHtml(h.status)}</span>`;
         });
 
         labelsHtml += `
