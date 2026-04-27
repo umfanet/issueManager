@@ -18,6 +18,7 @@ const vendorPasteBox = document.getElementById('vendorPasteBox');
 // === State ===
 let currentData = null;
 let vendorMode = 'file';
+let currentProjectId = null;
 
 // === Chart Colors ===
 const COLORS = ['#1e3a5f','#2d5f8a','#4a90d9','#28a745','#ffc107','#dc3545','#6f42c1','#20c997','#fd7e14','#e83e8c'];
@@ -55,6 +56,84 @@ function getStatusBadgeClass(status) {
     if (s === 'closed' || s === 'resolved') return 'badge-closed';
     if (s === 'new') return 'badge-new';
     return 'badge-progress';
+}
+
+// === Project Management ===
+async function loadProjects() {
+    try {
+        const resp = await fetch('/api/projects');
+        const data = await resp.json();
+        const select = document.getElementById('projectSelect');
+        select.innerHTML = '';
+        (data.projects || []).forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            select.appendChild(opt);
+        });
+
+        // Restore last selection
+        const saved = localStorage.getItem('selectedProjectId');
+        if (saved && select.querySelector(`option[value="${saved}"]`)) {
+            select.value = saved;
+        }
+        currentProjectId = parseInt(select.value) || 1;
+    } catch (e) {
+        console.error('Failed to load projects:', e);
+        currentProjectId = 1;
+    }
+}
+
+function onProjectChange() {
+    const select = document.getElementById('projectSelect');
+    currentProjectId = parseInt(select.value) || 1;
+    localStorage.setItem('selectedProjectId', currentProjectId);
+    loadTimeline();
+}
+
+async function addProject() {
+    const name = prompt('새 프로젝트 이름:');
+    if (!name || !name.trim()) return;
+    try {
+        const resp = await fetch('/api/projects', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim()}),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            alert(data.error || '프로젝트 생성 실패');
+            return;
+        }
+        await loadProjects();
+        // Select the new project
+        document.getElementById('projectSelect').value = data.id;
+        onProjectChange();
+    } catch (e) {
+        alert('프로젝트 생성 중 오류: ' + e.message);
+    }
+}
+
+async function deleteProject() {
+    if (!currentProjectId || currentProjectId === 1) {
+        alert('Default 프로젝트는 삭제할 수 없습니다.');
+        return;
+    }
+    const select = document.getElementById('projectSelect');
+    const name = select.options[select.selectedIndex].textContent;
+    if (!confirm(`"${name}" 프로젝트를 삭제하시겠습니까?\n관련된 모든 이슈와 이력이 삭제됩니다.`)) return;
+    try {
+        const resp = await fetch(`/api/projects/${currentProjectId}`, {method: 'DELETE'});
+        const data = await resp.json();
+        if (!resp.ok) {
+            alert(data.error || '삭제 실패');
+            return;
+        }
+        await loadProjects();
+        onProjectChange();
+    } catch (e) {
+        alert('삭제 중 오류: ' + e.message);
+    }
 }
 
 // === Upload Box Setup ===
@@ -225,7 +304,8 @@ function showTab(tab) {
 // === Timeline Loading ===
 async function loadTimeline() {
     try {
-        const resp = await fetch('/timeline');
+        const url = currentProjectId ? `/timeline?project_id=${currentProjectId}` : '/timeline';
+        const resp = await fetch(url);
         const data = await resp.json();
         if (data.error) return;
         renderTimelines(data.timelines);
@@ -245,6 +325,7 @@ async function doCompare() {
     }
     formData.append('system_file', systemFile.files[0]);
     formData.append('record_date', document.getElementById('recordDate').value);
+    formData.append('project_id', currentProjectId || 1);
 
     const loading = document.getElementById('loading');
     const errorMsg = document.getElementById('errorMsg');
@@ -309,7 +390,7 @@ async function doCompare() {
 }
 
 function doDownload() {
-    window.location.href = '/download';
+    window.location.href = `/download?project_id=${currentProjectId || 1}`;
 }
 
 async function doGenerateTemplate() {
@@ -355,3 +436,6 @@ async function doGenerateTemplate() {
         templateBtn.disabled = false;
     }
 }
+
+// === Init ===
+loadProjects().then(() => loadTimeline());

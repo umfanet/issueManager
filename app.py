@@ -9,7 +9,10 @@ from config import VERSION, PORT, MAX_UPLOAD_SIZE
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
 from exporter import export_updated_vendor_file, export_vendor_template
-from database import upsert_issues, get_all_timelines, get_bottleneck_analysis
+from database import (
+    upsert_issues, get_all_timelines, get_bottleneck_analysis,
+    get_projects, create_project, rename_project, delete_project,
+)
 from datetime import datetime
 
 
@@ -27,6 +30,7 @@ app = Flask(
     static_folder=os.path.join(BASE_PATH, 'static'),
 )
 app.config['MAX_CONTENT_LENGTH'] = MAX_UPLOAD_SIZE
+app.config['LAST_RESULTS'] = {}  # keyed by project_id
 
 # Use temp directory for uploads (works regardless of exe location)
 UPLOAD_FOLDER = os.path.join(tempfile.gettempdir(), 'issue_manager_uploads')
@@ -38,11 +42,63 @@ def index():
     return render_template('index.html', version=VERSION)
 
 
+# === Project API ===
+
+@app.route('/api/projects', methods=['GET'])
+def list_projects():
+    return jsonify({'projects': get_projects()})
+
+
+@app.route('/api/projects', methods=['POST'])
+def add_project():
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': '프로젝트 이름을 입력해주세요.'}), 400
+    try:
+        project = create_project(name)
+        return jsonify(project), 201
+    except Exception as e:
+        return jsonify({'error': f'프로젝트 생성 실패: {e}'}), 400
+
+
+@app.route('/api/projects/<int:project_id>', methods=['PUT'])
+def update_project(project_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': '프로젝트 이름을 입력해주세요.'}), 400
+    try:
+        rename_project(project_id, name)
+        return jsonify({'id': project_id, 'name': name})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/projects/<int:project_id>', methods=['DELETE'])
+def remove_project(project_id):
+    try:
+        delete_project(project_id)
+        return jsonify({'ok': True})
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# === Compare / Download / Template ===
+
 @app.route('/compare', methods=['POST'])
 def compare():
     vendor_file = request.files.get('vendor_file')
     vendor_paste = request.form.get('vendor_paste', '').strip()
     system_file = request.files.get('system_file')
+    project_id = request.form.get('project_id', '1')
+
+    try:
+        project_id = int(project_id)
+    except (TypeError, ValueError):
+        project_id = 1
 
     if (not vendor_file and not vendor_paste) or not system_file:
         return jsonify({'error': '업체 파일(또는 붙여넣기)과 시스템 파일을 모두 입력해주세요.'}), 400
@@ -59,13 +115,13 @@ def compare():
         result = compare_issues(vendor_issues, system_issues)
         stats = generate_statistics(result)
 
-        # Save result for export
-        app.config['LAST_RESULT'] = result
+        # Save result for export (keyed by project)
+        app.config['LAST_RESULTS'][project_id] = result
 
         # Record status history in DB
         record_date = request.form.get('record_date', '').strip() or None
         all_active = result['common'] + result['system_only']
-        db_counts = upsert_issues(all_active, record_date=record_date)
+        db_counts = upsert_issues(all_active, record_date=record_date, project_id=project_id)
 
         return jsonify({
             'stats': stats,
@@ -82,7 +138,8 @@ def compare():
 
 @app.route('/download', methods=['GET'])
 def download():
-    result = app.config.get('LAST_RESULT')
+    project_id = request.args.get('project_id', 1, type=int)
+    result = app.config['LAST_RESULTS'].get(project_id)
 
     if not result:
         return jsonify({'error': '먼저 비교를 수행해주세요.'}), 400
@@ -126,9 +183,10 @@ def generate_template():
 
 @app.route('/timeline', methods=['GET'])
 def timeline():
+    project_id = request.args.get('project_id', None, type=int)
     try:
-        timelines = get_all_timelines()
-        bottleneck = get_bottleneck_analysis()
+        timelines = get_all_timelines(project_id=project_id)
+        bottleneck = get_bottleneck_analysis(project_id=project_id)
         return jsonify({
             'timelines': timelines,
             'bottleneck': bottleneck,

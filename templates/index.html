@@ -9,6 +9,11 @@
 <body>
     <div class="header">
         <h1>Issue Manager</h1>
+        <div class="project-selector">
+            <select id="projectSelect" onchange="onProjectChange()"></select>
+            <button class="btn-icon" id="addProjectBtn" onclick="addProject()" title="프로젝트 추가">+</button>
+            <button class="btn-icon" id="delProjectBtn" onclick="deleteProject()" title="프로젝트 삭제">&minus;</button>
+        </div>
         <div class="date"><span id="currentDate"></span> &nbsp;|&nbsp; {{ version }}</div>
     </div>
 

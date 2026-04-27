@@ -16,8 +16,55 @@ body {
     justify-content: space-between;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
-.header h1 { font-size: 1.5em; font-weight: 600; }
+.header h1 { font-size: 1.5em; font-weight: 600; white-space: nowrap; }
 .header .date { font-size: 0.9em; opacity: 0.8; }
+
+/* === Project Selector === */
+.project-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.project-selector select {
+    padding: 6px 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 0.9em;
+    font-weight: 500;
+    min-width: 160px;
+    cursor: pointer;
+    outline: none;
+}
+.project-selector select:focus {
+    border-color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.25);
+}
+.project-selector select option {
+    background: #1e3a5f;
+    color: white;
+}
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+.btn-icon:hover {
+    background: rgba(255,255,255,0.3);
+}
 
 /* === Layout === */
 .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
