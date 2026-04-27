@@ -241,47 +241,55 @@ function renderDonutChart(containerId, data) {
         return;
     }
     const total = entries.reduce((s, e) => s + e[1], 0);
-    const size = 140;
-    const cx = size / 2, cy = size / 2, r = 54, inner = 32;
+    const svgSize = 260;
+    const cx = svgSize / 2, cy = svgSize / 2, r = 70, inner = 44, labelR = 95;
 
-    // Build SVG arcs
     let angle = -90;
-    let arcs = '';
+    let arcs = '', labels = '';
+
     entries.forEach(([label, value], i) => {
         const pct = value / total;
         const sweep = pct * 360;
         const startAngle = angle;
         const endAngle = angle + sweep;
+        const midAngle = (startAngle + endAngle) / 2;
         const largeArc = sweep > 180 ? 1 : 0;
         const rad1 = startAngle * Math.PI / 180;
         const rad2 = endAngle * Math.PI / 180;
+        const midRad = midAngle * Math.PI / 180;
         const color = COLORS[i % COLORS.length];
 
-        // Outer arc
+        // Donut arc
         const x1 = cx + r * Math.cos(rad1), y1 = cy + r * Math.sin(rad1);
         const x2 = cx + r * Math.cos(rad2), y2 = cy + r * Math.sin(rad2);
-        // Inner arc
         const ix1 = cx + inner * Math.cos(rad2), iy1 = cy + inner * Math.sin(rad2);
         const ix2 = cx + inner * Math.cos(rad1), iy2 = cy + inner * Math.sin(rad1);
-
         const path = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${inner} ${inner} 0 ${largeArc} 0 ${ix2} ${iy2} Z`;
         arcs += `<path d="${path}" fill="${color}" stroke="white" stroke-width="1.5"><title>${label}: ${value} (${Math.round(pct*100)}%)</title></path>`;
+
+        // Label with leader line
+        const arcMidX = cx + (r + 4) * Math.cos(midRad);
+        const arcMidY = cy + (r + 4) * Math.sin(midRad);
+        const lblX = cx + labelR * Math.cos(midRad);
+        const lblY = cy + labelR * Math.sin(midRad);
+        const textAnchor = midAngle > -90 && midAngle < 90 ? 'start' : 'end';
+        const textX = lblX + (textAnchor === 'start' ? 4 : -4);
+        const pctText = Math.round(pct * 100);
+        const displayLabel = label.length > 14 ? label.substring(0, 12) + '..' : label;
+
+        labels += `<line x1="${arcMidX}" y1="${arcMidY}" x2="${lblX}" y2="${lblY}" stroke="${color}" stroke-width="1" opacity="0.6"/>`;
+        labels += `<text x="${textX}" y="${lblY - 1}" text-anchor="${textAnchor}" fill="${color}" font-size="9" font-weight="600">${displayLabel}</text>`;
+        labels += `<text x="${textX}" y="${lblY + 10}" text-anchor="${textAnchor}" fill="#888" font-size="8">${value} (${pctText}%)</text>`;
+
         angle = endAngle;
     });
 
-    // Center total
-    const svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="18" font-weight="700">${total}</text></svg>`;
+    const svg = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" style="overflow:visible">
+        ${arcs}${labels}
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="20" font-weight="700">${total}</text>
+    </svg>`;
 
-    // Legend
-    let legend = '<div class="donut-legend">';
-    entries.forEach(([label, value], i) => {
-        const color = COLORS[i % COLORS.length];
-        const pct = Math.round((value / total) * 100);
-        legend += `<div class="donut-legend-item"><span class="donut-legend-color" style="background:${color}"></span><span class="donut-legend-label">${label || '(empty)'}</span><span class="donut-legend-value">${value} (${pct}%)</span></div>`;
-    });
-    legend += '</div>';
-
-    container.innerHTML = `<div class="donut-wrapper">${svg}${legend}</div>`;
+    container.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>`;
 }
 
 function renderTable(issues) {
