@@ -419,15 +419,22 @@ def get_issue_timeline(issue_id):
 
 
 def get_all_timelines(project_id=None):
-    """Get status timelines for all issues, optionally filtered by project."""
+    """Get status timelines for active issues only (latest record date)."""
     conn = get_db()
     today = date.today().isoformat()
 
     if project_id:
-        issues = conn.execute(
-            'SELECT id, headline, current_status, first_seen_date FROM issues WHERE project_id = ? ORDER BY first_seen_date',
-            (project_id,)
-        ).fetchall()
+        latest = _latest_record_date(conn, project_id)
+        if latest:
+            issues = conn.execute(
+                'SELECT id, headline, current_status, first_seen_date FROM issues WHERE project_id = ? AND last_record_date = ? ORDER BY first_seen_date',
+                (project_id, latest)
+            ).fetchall()
+        else:
+            issues = conn.execute(
+                'SELECT id, headline, current_status, first_seen_date FROM issues WHERE project_id = ? ORDER BY first_seen_date',
+                (project_id,)
+            ).fetchall()
     else:
         issues = conn.execute(
             'SELECT id, headline, current_status, first_seen_date FROM issues ORDER BY first_seen_date'
