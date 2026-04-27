@@ -213,6 +213,14 @@ def delete_milestone(milestone_id):
 
 # === Issue Operations ===
 
+def get_known_issue_ids():
+    """Return set of all issue IDs that have ever been in the DB."""
+    conn = get_db()
+    rows = conn.execute('SELECT id FROM issues').fetchall()
+    conn.close()
+    return {r['id'] for r in rows}
+
+
 def _latest_record_date(conn, project_id):
     """Get the most recent record_date for a project."""
     row = conn.execute(

@@ -1,8 +1,11 @@
 from collections import Counter
 
 
-def compare_issues(vendor_issues, system_issues):
+def compare_issues(vendor_issues, system_issues, known_ids=None):
     """Compare vendor and system issues by ID.
+
+    Args:
+        known_ids: set of issue IDs already in DB (used to detect Reopened vs New)
 
     Returns:
         dict with keys:
@@ -10,6 +13,7 @@ def compare_issues(vendor_issues, system_issues):
         - vendor_only: issues only in vendor (completed/removed from system)
         - system_only: issues only in system (new/re-assigned/rejected)
     """
+    known_ids = known_ids or set()
     vendor_by_id = {issue['IDWORKITEM']: issue for issue in vendor_issues}
     system_by_id = {issue['ID']: issue for issue in system_issues}
 
@@ -54,14 +58,15 @@ def compare_issues(vendor_issues, system_issues):
             'Tag': v['Tag'],
         })
 
-    # System only - new/re-assigned/rejected
+    # System only - new or reopened
     system_only = []
     for id_val in sorted(system_only_ids):
         s = system_by_id[id_val]
+        status = 'Reopened' if id_val in known_ids else 'New'
         system_only.append({
             'ID': id_val,
             'HEADLINE': s['Headline'],
-            'Status': 'New',
+            'Status': status,
             'Comments': [],
             'Module': 'N/A',
             'Owner': '',
@@ -87,11 +92,14 @@ def generate_statistics(result):
     all_active = common + system_only  # currently active issues
 
     # Summary counts
+    new_count = sum(1 for i in system_only if i['Status'] == 'New')
+    reopened_count = sum(1 for i in system_only if i['Status'] == 'Reopened')
     summary = {
         'total_active': len(all_active),
         'common': len(common),
         'resolved': len(vendor_only),
-        'new': len(system_only),
+        'new': new_count,
+        'reopened': reopened_count,
     }
 
     # Status breakdown (from active issues)

@@ -310,7 +310,7 @@ body {
 /* === Summary Cards === */
 .summary-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -334,6 +334,7 @@ body {
 .card.total .number { color: #1e3a5f; }
 .card.ongoing .number { color: #0d6efd; }
 .card.new .number { color: #28a745; }
+.card.reopened .number { color: #fd7e14; }
 .card.completed .number { color: #6c757d; }
 
 /* === Milestones === */
@@ -617,6 +618,7 @@ body {
     font-weight: 600;
 }
 .badge-new { background: #e2efda; color: #28a745; }
+.badge-reopened { background: #fff3cd; color: #fd7e14; }
 .badge-closed { background: #d9d9d9; color: #555; }
 .badge-progress { background: #cfe2ff; color: #0d6efd; }
 .comments-cell {

@@ -55,6 +55,7 @@ function getStatusBadgeClass(status) {
     const s = (status || '').toLowerCase();
     if (s === 'closed' || s === 'resolved') return 'badge-closed';
     if (s === 'new') return 'badge-new';
+    if (s === 'reopened') return 'badge-reopened';
     return 'badge-progress';
 }
 
@@ -668,6 +669,7 @@ async function loadDashboard() {
         document.getElementById('statTotal').textContent = summary.total || 0;
         document.getElementById('statOngoing').textContent = summary.total || 0;
         document.getElementById('statNew').textContent = 0;
+        document.getElementById('statReopened').textContent = 0;
         document.getElementById('statCompleted').textContent = 0;
 
         // Tab counts
@@ -748,7 +750,10 @@ async function doCompare() {
         // Summary cards
         document.getElementById('statTotal').textContent = data.stats.summary.total_active;
         document.getElementById('statOngoing').textContent = data.stats.summary.common;
-        document.getElementById('statNew').textContent = data.stats.summary.new;
+        const newCount = data.stats.summary.new || 0;
+        const reopenedCount = data.stats.summary.reopened || 0;
+        document.getElementById('statNew').textContent = newCount;
+        document.getElementById('statReopened').textContent = reopenedCount;
         document.getElementById('statCompleted').textContent = data.stats.summary.resolved;
 
         // Tab counts
@@ -893,6 +898,7 @@ function copyForConfluence() {
             <td style="padding:16px 28px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border-radius:8px;min-width:100px"><div style="font-size:2em;margin-bottom:4px">${cs('statTotal')}</div><div style="font-size:0.85em;opacity:0.9">Total Active</div></td>
             <td style="padding:16px 28px;text-align:center;background:#e8f0fe;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#0d6efd;font-weight:bold;margin-bottom:4px">${cs('statOngoing')}</div><div style="font-size:0.85em;color:#0d6efd">Ongoing</div></td>
             <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statNew')}</div><div style="font-size:0.85em;color:#28a745">New</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#fff3cd;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#fd7e14;font-weight:bold;margin-bottom:4px">${cs('statReopened')}</div><div style="font-size:0.85em;color:#fd7e14">Reopened</div></td>
             <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statCompleted')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
         </tr>
     </table>`;
