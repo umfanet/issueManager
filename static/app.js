@@ -393,7 +393,8 @@ function renderTimelines(timelines) {
 
             // Status label below dot (only current status always visible)
             const labelClass = isLast ? 'tl-dot-label tl-dot-label-current' : 'tl-dot-label';
-            dotsHtml += `<span class="${labelClass}" style="left:${leftPct}%">${escHtml(h.status)}</span>`;
+            const labelAlign = leftPct < 10 ? 'transform:translateX(0)' : leftPct > 90 ? 'transform:translateX(-100%)' : 'transform:translateX(-50%)';
+            dotsHtml += `<span class="${labelClass}" style="left:${leftPct}%;${labelAlign}">${escHtml(h.status)}</span>`;
         });
 
         labelsHtml += `
