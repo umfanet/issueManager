@@ -2,7 +2,7 @@ import os
 import sys
 
 # App
-VERSION = 'v0.6.0'
+VERSION = 'v0.7.0'
 PORT = 5000
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 
