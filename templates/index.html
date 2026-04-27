@@ -72,7 +72,6 @@
         <div class="dashboard" id="dashboard">
             <div class="dashboard-export-bar" id="dashboardExportBar" style="display:none">
                 <button class="btn btn-copy-sm" onclick="copyForConfluence()">Copy for Confluence</button>
-                <button class="btn btn-export-sm" onclick="doExportIssues()">Export Issue List</button>
                 <button class="btn btn-download-sm" id="downloadBtn" style="display:none" onclick="doDownload()">Download Compare Result</button>
             </div>
             <div class="summary-cards">
@@ -110,7 +109,10 @@
             </div>
 
             <div class="table-section">
-                <h3>Issue Details</h3>
+                <div class="table-header">
+                    <h3>Issue Details</h3>
+                    <button class="btn btn-export-sm" id="exportBtn" style="display:none" onclick="doExportIssues()">Export to Excel</button>
+                </div>
                 <div class="tab-buttons">
                     <button class="tab-btn active" onclick="showTab('active')">Active (<span id="tabCountActive">0</span>)</button>
                     <button class="tab-btn" onclick="showTab('resolved')">Resolved (<span id="tabCountResolved">0</span>)</button>

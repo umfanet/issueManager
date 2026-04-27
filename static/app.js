@@ -636,6 +636,7 @@ async function loadDashboard() {
         if (issues.length === 0) {
             // No issues yet - show dashboard only if milestones exist
             document.getElementById('dashboardExportBar').style.display = 'none';
+            document.getElementById('exportBtn').style.display = 'none';
             if ((data.milestones || []).length > 0) {
                 document.getElementById('dashboard').classList.add('active');
             } else {
@@ -682,6 +683,7 @@ async function loadDashboard() {
         // Show dashboard & export bar
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('dashboardExportBar').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'inline-block';
     } catch (e) {
         console.error('Dashboard load error:', e);
     }
@@ -748,6 +750,7 @@ async function doCompare() {
         // Show dashboard & download button
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('dashboardExportBar').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'inline-block';
         document.getElementById('downloadBtn').style.display = 'inline-block';
 
         // Reload timeline & bottleneck only (don't overwrite compare data)
@@ -766,8 +769,54 @@ function doDownload() {
     window.location.href = `/download?project_id=${currentProjectId || 1}`;
 }
 
-function doExportIssues() {
-    window.location.href = `/export-issues?project_id=${currentProjectId || 1}`;
+async function doExportIssues() {
+    // Collect data from current table
+    const rows = document.querySelectorAll('#issueTableBody tr');
+    const issues = [];
+    rows.forEach(tr => {
+        const cells = tr.querySelectorAll('td');
+        if (cells.length >= 9) {
+            issues.push({
+                id: cells[1].textContent.trim(),
+                headline: cells[2].textContent.trim(),
+                current_status: cells[3].textContent.trim(),
+                comments: cells[8].textContent.trim(),
+                module: cells[4].textContent.trim(),
+                owner: cells[5].textContent.trim(),
+                days: cells[6].textContent.trim(),
+                tag: cells[7].textContent.trim(),
+            });
+        }
+    });
+
+    if (!issues.length) {
+        alert('내보낼 이슈가 없습니다.');
+        return;
+    }
+
+    try {
+        const resp = await fetch('/export-issues', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({issues}),
+        });
+        if (!resp.ok) {
+            const data = await resp.json();
+            alert(data.error || 'Export failed');
+            return;
+        }
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `issue_list_${todayStr.replace(/-/g,'')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('Export 오류: ' + e.message);
+    }
 }
 
 async function doGenerateTemplate() {

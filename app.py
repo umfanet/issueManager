@@ -221,15 +221,15 @@ def download():
     )
 
 
-@app.route('/export-issues', methods=['GET'])
+@app.route('/export-issues', methods=['POST'])
 def export_issues():
-    """Export current issue list from DB (no compare needed)."""
-    project_id = request.args.get('project_id', 1, type=int)
-    try:
-        issues = get_project_issues(project_id)
-        if not issues:
-            return jsonify({'error': '내보낼 이슈가 없습니다.'}), 400
+    """Export issue list from currently displayed table data."""
+    data = request.get_json(silent=True) or {}
+    issues = data.get('issues', [])
+    if not issues:
+        return jsonify({'error': '내보낼 이슈가 없습니다.'}), 400
 
+    try:
         output_path = os.path.join(UPLOAD_FOLDER, 'issue_list.xlsx')
         export_issue_list(issues, output_path)
 

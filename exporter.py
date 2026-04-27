@@ -174,12 +174,12 @@ def export_vendor_template(system_issues, output_path):
 
 
 def export_issue_list(issues, output_path):
-    """Export issue list from DB data (no compare needed)."""
+    """Export issue list from displayed table data (includes comments)."""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Issue List'
 
-    headers = ['No', 'ID', 'Headline', 'Status', 'Comments', 'Module', 'Owner', 'Tag']
+    headers = ['No', 'ID', 'Headline', 'Status', 'Comments', 'Module', 'Owner', 'Days since Opened', 'Tag']
     for col_idx, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_idx, value=h)
         cell.fill = HEADER_FILL
@@ -189,14 +189,18 @@ def export_issue_list(issues, output_path):
 
     for idx, issue in enumerate(issues, 1):
         row = idx + 1
+        comments = issue.get('comments', '') or ''
+        if comments == '-':
+            comments = ''
         values = [
             idx,
             issue.get('id', ''),
             issue.get('headline', ''),
             issue.get('current_status', ''),
-            '',  # Comments
+            comments,
             issue.get('module', ''),
             issue.get('owner', ''),
+            issue.get('days', ''),
             issue.get('tag', ''),
         ]
         for col_idx, val in enumerate(values, 1):
