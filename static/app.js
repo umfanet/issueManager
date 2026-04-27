@@ -292,6 +292,139 @@ function renderBottleneck(bottleneck) {
     stalledEl.innerHTML = html;
 }
 
+// === Milestones ===
+function getDdayClass(dDay) {
+    if (dDay < 0) return 'dday-over';
+    if (dDay <= 6) return 'dday-danger';
+    if (dDay <= 14) return 'dday-warn';
+    return 'dday-safe';
+}
+
+function formatDday(dDay) {
+    if (dDay === 0) return 'D-Day!';
+    if (dDay > 0) return `D-${dDay}`;
+    return `D+${Math.abs(dDay)}`;
+}
+
+function renderMilestones(milestones) {
+    const container = document.getElementById('milestoneList');
+    if (!milestones || !milestones.length) {
+        container.innerHTML = '<div style="color:#999;font-size:0.9em;">[+] 버튼으로 단계를 추가하세요.</div>';
+        return;
+    }
+
+    let html = '';
+    milestones.forEach(m => {
+        const ddayClass = getDdayClass(m.d_day);
+        const ddayText = formatDday(m.d_day);
+        // Progress: assume milestone spans 90 days before due_date
+        const totalSpan = 90;
+        const elapsed = totalSpan - Math.max(m.d_day, 0);
+        const pct = Math.min(Math.max((elapsed / totalSpan) * 100, 2), 100);
+        const barColor = m.d_day < 0 ? '#dc3545' : m.d_day <= 6 ? '#dc3545' : m.d_day <= 14 ? '#fd7e14' : '#0d6efd';
+
+        html += `
+            <div class="milestone-item" data-id="${m.id}">
+                <span class="milestone-name" onclick="editMilestoneName(${m.id}, this)" title="클릭하여 편집">${escHtml(m.name)}</span>
+                <div class="milestone-bar-wrapper">
+                    <div class="milestone-bar">
+                        <div class="milestone-fill" style="width:${pct}%;background:${barColor}"></div>
+                    </div>
+                    <span class="milestone-date" onclick="editMilestoneDate(${m.id}, this)" title="클릭하여 편집">${m.due_date}</span>
+                </div>
+                <span class="milestone-dday ${ddayClass}">${ddayText}</span>
+                <button class="milestone-del" onclick="deleteMilestoneItem(${m.id})" title="삭제">&times;</button>
+            </div>`;
+    });
+    container.innerHTML = html;
+}
+
+async function addMilestone() {
+    const name = prompt('단계 이름 (예: EVT1 검증, 양산 대응):');
+    if (!name || !name.trim()) return;
+
+    const due_date = prompt('마감일 (YYYY-MM-DD):', todayStr);
+    if (!due_date || !due_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        alert('날짜 형식이 올바르지 않습니다. (예: 2026-05-15)');
+        return;
+    }
+
+    try {
+        const resp = await fetch(`/api/projects/${currentProjectId}/milestones`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim(), due_date}),
+        });
+        if (!resp.ok) {
+            const data = await resp.json();
+            alert(data.error || '추가 실패');
+            return;
+        }
+        loadDashboard();
+    } catch (e) {
+        alert('오류: ' + e.message);
+    }
+}
+
+async function editMilestoneName(id, el) {
+    const current = el.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = current;
+    input.className = 'milestone-edit-input';
+    el.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const save = async () => {
+        const newVal = input.value.trim();
+        if (newVal && newVal !== current) {
+            await fetch(`/api/milestones/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: newVal}),
+            });
+        }
+        loadDashboard();
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+}
+
+async function editMilestoneDate(id, el) {
+    const current = el.textContent;
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.value = current;
+    input.className = 'milestone-edit-input';
+    el.replaceWith(input);
+    input.focus();
+
+    const save = async () => {
+        const newVal = input.value;
+        if (newVal && newVal !== current) {
+            await fetch(`/api/milestones/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({due_date: newVal}),
+            });
+        }
+        loadDashboard();
+    };
+    input.addEventListener('blur', save);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); });
+}
+
+async function deleteMilestoneItem(id) {
+    if (!confirm('이 단계를 삭제하시겠습니까?')) return;
+    try {
+        await fetch(`/api/milestones/${id}`, {method: 'DELETE'});
+        loadDashboard();
+    } catch (e) {
+        alert('삭제 실패: ' + e.message);
+    }
+}
+
 // === Tab Switching ===
 function showTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -312,9 +445,16 @@ async function loadDashboard() {
         const summary = data.summary || {};
         const issues = data.issues || [];
 
+        // Milestones (always show, even without issues)
+        renderMilestones(data.milestones || []);
+
         if (issues.length === 0) {
-            // No data yet - hide dashboard
-            document.getElementById('dashboard').classList.remove('active');
+            // No issues yet - show dashboard only if milestones exist
+            if ((data.milestones || []).length > 0) {
+                document.getElementById('dashboard').classList.add('active');
+            } else {
+                document.getElementById('dashboard').classList.remove('active');
+            }
             return;
         }
 

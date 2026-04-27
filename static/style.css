@@ -283,6 +283,112 @@ body {
 .card.new .number { color: #28a745; }
 .card.completed .number { color: #6c757d; }
 
+/* === Milestones === */
+.milestones-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+.milestones-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.milestones-header h3 {
+    font-size: 1em;
+    color: #1e3a5f;
+    margin: 0;
+}
+.milestones-header .btn-icon {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+}
+.milestones-header .btn-icon:hover {
+    background: #2d5f8a;
+}
+.milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f2f5;
+}
+.milestone-item:last-child {
+    border-bottom: none;
+}
+.milestone-name {
+    min-width: 140px;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+.milestone-name:hover {
+    color: #0d6efd;
+}
+.milestone-bar-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.milestone-bar {
+    flex: 1;
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.milestone-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+.milestone-date {
+    font-size: 0.82em;
+    color: #666;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.milestone-date:hover {
+    color: #0d6efd;
+}
+.milestone-dday {
+    min-width: 60px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+.dday-safe { color: #0d6efd; }
+.dday-warn { color: #fd7e14; }
+.dday-danger { color: #dc3545; }
+.dday-over { color: #dc3545; font-weight: 800; }
+.milestone-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.2em;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+.milestone-del:hover {
+    color: #dc3545;
+}
+.milestone-edit-input {
+    padding: 4px 8px;
+    border: 1px solid #0d6efd;
+    border-radius: 4px;
+    font-size: 0.9em;
+    outline: none;
+}
+
 /* === Charts === */
 .charts-grid {
     display: grid;

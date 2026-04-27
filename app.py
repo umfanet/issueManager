@@ -13,6 +13,7 @@ from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
     get_project_issues, get_project_summary,
+    get_milestones, add_milestone, update_milestone, delete_milestone,
 )
 from datetime import datetime
 
@@ -95,15 +96,60 @@ def project_dashboard(project_id):
         summary = get_project_summary(project_id)
         timelines = get_all_timelines(project_id=project_id)
         bottleneck = get_bottleneck_analysis(project_id=project_id)
+        milestones = get_milestones(project_id)
         return jsonify({
             'issues': issues,
             'summary': summary,
             'timelines': timelines,
             'bottleneck': bottleneck,
+            'milestones': milestones,
         })
     except Exception as e:
         import traceback
         traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# === Milestone API ===
+
+@app.route('/api/projects/<int:project_id>/milestones', methods=['GET'])
+def list_milestones(project_id):
+    return jsonify({'milestones': get_milestones(project_id)})
+
+
+@app.route('/api/projects/<int:project_id>/milestones', methods=['POST'])
+def create_milestone(project_id):
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    due_date = (data.get('due_date') or '').strip()
+    if not name or not due_date:
+        return jsonify({'error': '단계 이름과 날짜를 입력해주세요.'}), 400
+    try:
+        milestone = add_milestone(project_id, name, due_date)
+        return jsonify(milestone), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/milestones/<int:milestone_id>', methods=['PUT'])
+def edit_milestone(milestone_id):
+    data = request.get_json(silent=True) or {}
+    try:
+        update_milestone(milestone_id,
+                         name=data.get('name'),
+                         due_date=data.get('due_date'),
+                         sort_order=data.get('sort_order'))
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/milestones/<int:milestone_id>', methods=['DELETE'])
+def remove_milestone(milestone_id):
+    try:
+        delete_milestone(milestone_id)
+        return jsonify({'ok': True})
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 

@@ -50,6 +50,18 @@ def _init_tables(conn):
             ON status_history(issue_id);
         CREATE INDEX IF NOT EXISTS idx_history_status
             ON status_history(status);
+
+        CREATE TABLE IF NOT EXISTS milestones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            due_date TEXT NOT NULL,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_milestones_project
+            ON milestones(project_id);
     ''')
     conn.commit()
 
@@ -121,7 +133,74 @@ def delete_project(project_id):
         (project_id,)
     )
     conn.execute('DELETE FROM issues WHERE project_id = ?', (project_id,))
+    conn.execute('DELETE FROM milestones WHERE project_id = ?', (project_id,))
     conn.execute('DELETE FROM projects WHERE id = ?', (project_id,))
+    conn.commit()
+    conn.close()
+
+
+# === Milestone Operations ===
+
+def get_milestones(project_id):
+    """Get milestones for a project with calculated D-day."""
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT id, project_id, name, due_date, sort_order FROM milestones WHERE project_id = ? ORDER BY sort_order, due_date',
+        (project_id,)
+    ).fetchall()
+    conn.close()
+
+    today = date.today()
+    result = []
+    for r in rows:
+        due = date.fromisoformat(r['due_date'])
+        d_day = (due - today).days
+        item = dict(r)
+        item['d_day'] = d_day
+        result.append(item)
+    return result
+
+
+def add_milestone(project_id, name, due_date):
+    """Add a milestone to a project."""
+    conn = get_db()
+    # Auto sort_order: append at end
+    max_order = conn.execute(
+        'SELECT COALESCE(MAX(sort_order), -1) FROM milestones WHERE project_id = ?',
+        (project_id,)
+    ).fetchone()[0]
+    cursor = conn.execute(
+        'INSERT INTO milestones (project_id, name, due_date, sort_order) VALUES (?, ?, ?, ?)',
+        (project_id, name.strip(), due_date, max_order + 1)
+    )
+    milestone_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    d_day = (date.fromisoformat(due_date) - date.today()).days
+    return {'id': milestone_id, 'project_id': project_id, 'name': name.strip(),
+            'due_date': due_date, 'sort_order': max_order + 1, 'd_day': d_day}
+
+
+def update_milestone(milestone_id, **kwargs):
+    """Update milestone fields (name, due_date, sort_order)."""
+    conn = get_db()
+    allowed = {'name', 'due_date', 'sort_order'}
+    updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+    if not updates:
+        conn.close()
+        return
+    set_clause = ', '.join(f'{k} = ?' for k in updates)
+    values = list(updates.values()) + [milestone_id]
+    conn.execute(f'UPDATE milestones SET {set_clause} WHERE id = ?', values)
+    conn.commit()
+    conn.close()
+
+
+def delete_milestone(milestone_id):
+    """Delete a milestone."""
+    conn = get_db()
+    conn.execute('DELETE FROM milestones WHERE id = ?', (milestone_id,))
     conn.commit()
     conn.close()
 
