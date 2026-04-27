@@ -1,11 +1,11 @@
 from collections import Counter
 
 
-def compare_issues(vendor_issues, system_issues, known_ids=None):
+def compare_issues(vendor_issues, system_issues, known_map=None):
     """Compare vendor and system issues by ID.
 
     Args:
-        known_ids: set of issue IDs already in DB (used to detect Reopened vs New)
+        known_map: dict of issue ID -> {module, owner} from DB (used to detect Reopened vs New)
 
     Returns:
         dict with keys:
@@ -13,7 +13,7 @@ def compare_issues(vendor_issues, system_issues, known_ids=None):
         - vendor_only: issues only in vendor (completed/removed from system)
         - system_only: issues only in system (new/re-assigned/rejected)
     """
-    known_ids = known_ids or set()
+    known_map = known_map or {}
     vendor_by_id = {issue['IDWORKITEM']: issue for issue in vendor_issues}
     system_by_id = {issue['ID']: issue for issue in system_issues}
 
@@ -62,14 +62,22 @@ def compare_issues(vendor_issues, system_issues, known_ids=None):
     system_only = []
     for id_val in sorted(system_only_ids):
         s = system_by_id[id_val]
-        status = 'Reopened' if id_val in known_ids else 'New'
+        prev = known_map.get(id_val)
+        if prev:
+            status = 'Reopened'
+            module = prev.get('module', '') or 'N/A'
+            owner = prev.get('owner', '')
+        else:
+            status = 'New'
+            module = 'N/A'
+            owner = ''
         system_only.append({
             'ID': id_val,
             'HEADLINE': s['Headline'],
             'Status': status,
             'Comments': [],
-            'Module': 'N/A',
-            'Owner': '',
+            'Module': module,
+            'Owner': owner,
             'Days since Opened': s['Days since Opened'],
             'Tag': s['Tag'],
             'Seriousness': s.get('Seriousness', ''),

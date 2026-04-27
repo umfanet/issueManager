@@ -12,7 +12,7 @@ from exporter import export_vendor_template, export_issue_list
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
-    get_project_issues, get_project_summary, get_known_issue_ids,
+    get_project_issues, get_project_summary, get_known_issues_map,
     get_milestones, add_milestone, update_milestone, delete_milestone,
 )
 from datetime import datetime
@@ -178,8 +178,8 @@ def compare():
             vendor_bytes = vendor_file.read()
             vendor_issues = parse_vendor_file(vendor_bytes, filename=vendor_file.filename)
         system_issues = parse_system_file(system_bytes, filename=system_file.filename)
-        known_ids = get_known_issue_ids()
-        result = compare_issues(vendor_issues, system_issues, known_ids=known_ids)
+        known_map = get_known_issues_map()
+        result = compare_issues(vendor_issues, system_issues, known_map=known_map)
         stats = generate_statistics(result)
 
         # Record status history in DB
