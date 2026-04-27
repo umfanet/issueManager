@@ -20,5 +20,6 @@ ID_COLUMN_NAMES = ['IDWORKITEM', 'ID']  # Accepted ID column names (priority ord
 HEADLINE_COLUMN_NAMES = ['HEADLINE', 'Headline']
 SYSTEM_HEADER_ROW = 1  # 0-based: row index of header in system export (row 2)
 
-# Bottleneck threshold
-STALLED_DAYS_THRESHOLD = 7
+# Bottleneck thresholds
+STALLED_WARNING_DAYS = 3   # Warning: 3~6 days
+STALLED_CRITICAL_DAYS = 7  # Critical: 7+ days

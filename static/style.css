@@ -823,20 +823,38 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 24px;
 }
+.stalled-group-label {
+    font-size: 0.85em;
+    font-weight: 700;
+    padding: 6px 0 4px;
+    margin-top: 4px;
+}
+.stalled-critical-label { color: #dc3545; }
+.stalled-warning-label { color: #fd7e14; }
 .stalled-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 4px;
     font-size: 0.85em;
 }
-.stalled-item:last-child { border-bottom: none; }
-.stalled-days {
-    font-weight: 700;
-    color: #dc3545;
-    white-space: nowrap;
+.stalled-critical {
+    background: #fff0f0;
 }
+.stalled-critical .stalled-days {
+    color: #dc3545;
+    font-weight: 700;
+}
+.stalled-warning {
+    background: #fffbe6;
+}
+.stalled-warning .stalled-days {
+    color: #fd7e14;
+    font-weight: 700;
+}
+.stalled-days { white-space: nowrap; }
 .stalled-info { flex: 1; margin-right: 12px; }
 .stalled-id { font-weight: 600; color: #1e3a5f; }
 .stalled-status { color: #666; font-size: 0.9em; }

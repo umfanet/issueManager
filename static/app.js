@@ -456,17 +456,28 @@ function renderBottleneck(bottleneck) {
         return;
     }
 
+    const critical = bottleneck.stalled.filter(s => s.level === 'critical');
+    const warning = bottleneck.stalled.filter(s => s.level === 'warning');
+
     let html = '';
-    bottleneck.stalled.forEach(s => {
-        html += `
-            <div class="stalled-item">
-                <div class="stalled-info">
-                    <span class="stalled-id">${escHtml(s.issue_id)}</span>
-                    <span class="stalled-status"> - ${escHtml(s.status)}</span>
-                </div>
-                <div class="stalled-days">${s.days_in_status} days</div>
+    if (critical.length) {
+        html += `<div class="stalled-group-label stalled-critical-label">🔴 Critical (7+ days) - ${critical.length}</div>`;
+        critical.forEach(s => {
+            html += `<div class="stalled-item stalled-critical">
+                <div class="stalled-info"><span class="stalled-id">${escHtml(s.issue_id)}</span><span class="stalled-status"> - ${escHtml(s.status)}</span></div>
+                <div class="stalled-days">${s.days_in_status}d</div>
             </div>`;
-    });
+        });
+    }
+    if (warning.length) {
+        html += `<div class="stalled-group-label stalled-warning-label">⚠️ Warning (3~6 days) - ${warning.length}</div>`;
+        warning.forEach(s => {
+            html += `<div class="stalled-item stalled-warning">
+                <div class="stalled-info"><span class="stalled-id">${escHtml(s.issue_id)}</span><span class="stalled-status"> - ${escHtml(s.status)}</span></div>
+                <div class="stalled-days">${s.days_in_status}d</div>
+            </div>`;
+        });
+    }
     stalledEl.innerHTML = html;
 }
 

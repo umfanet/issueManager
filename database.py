@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from datetime import datetime, date
-from config import DB_DIR, DB_PATH, STALLED_DAYS_THRESHOLD
+from config import DB_DIR, DB_PATH, STALLED_WARNING_DAYS, STALLED_CRITICAL_DAYS
 
 
 def get_db():
@@ -447,6 +447,10 @@ def get_bottleneck_analysis(project_id=None):
     conn = get_db()
     today = date.today().isoformat()
 
+    project_filter = 'AND i.project_id = ?' if project_id else ''
+    avg_params = (today, project_id) if project_id else (today,)
+    stalled_params = (today, project_id, today, STALLED_WARNING_DAYS) if project_id else (today, today, STALLED_WARNING_DAYS)
+
     if project_id:
         avg_by_status = conn.execute(
             '''SELECT sh.status,
@@ -462,19 +466,7 @@ def get_bottleneck_analysis(project_id=None):
                WHERE i.project_id = ?
                GROUP BY sh.status
                ORDER BY avg_days DESC''',
-            (today, project_id)
-        ).fetchall()
-
-        stalled = conn.execute(
-            '''SELECT sh.issue_id, i.headline, sh.status,
-                      CAST(julianday(?) - julianday(sh.started_at) AS INTEGER) as days_in_status
-               FROM status_history sh
-               JOIN issues i ON i.id = sh.issue_id
-               WHERE sh.ended_at IS NULL
-                 AND i.project_id = ?
-                 AND julianday(?) - julianday(sh.started_at) >= ?
-               ORDER BY days_in_status DESC''',
-            (today, project_id, today, STALLED_DAYS_THRESHOLD)
+            avg_params
         ).fetchall()
     else:
         avg_by_status = conn.execute(
@@ -492,19 +484,34 @@ def get_bottleneck_analysis(project_id=None):
             (today,)
         ).fetchall()
 
-        stalled = conn.execute(
-            '''SELECT sh.issue_id, i.headline, sh.status,
-                      CAST(julianday(?) - julianday(sh.started_at) AS INTEGER) as days_in_status
-               FROM status_history sh
-               JOIN issues i ON i.id = sh.issue_id
-               WHERE sh.ended_at IS NULL
-                 AND julianday(?) - julianday(sh.started_at) >= ?
-               ORDER BY days_in_status DESC''',
-            (today, today, STALLED_DAYS_THRESHOLD)
-        ).fetchall()
+    stalled_rows = conn.execute(
+        f'''SELECT sh.issue_id, i.headline, sh.status,
+                  CAST(julianday(?) - julianday(sh.started_at) AS INTEGER) as days_in_status
+           FROM status_history sh
+           JOIN issues i ON i.id = sh.issue_id
+           WHERE sh.ended_at IS NULL
+             {project_filter}
+             AND julianday(?) - julianday(sh.started_at) >= ?
+           ORDER BY days_in_status DESC''',
+        stalled_params
+    ).fetchall()
+
+    # Classify into warning (3-6d) and critical (7d+)
+    warning = []
+    critical = []
+    for r in stalled_rows:
+        item = dict(r)
+        if item['days_in_status'] >= STALLED_CRITICAL_DAYS:
+            item['level'] = 'critical'
+            critical.append(item)
+        else:
+            item['level'] = 'warning'
+            warning.append(item)
 
     conn.close()
     return {
         'avg_by_status': [dict(r) for r in avg_by_status],
-        'stalled': [dict(r) for r in stalled],
+        'stalled': critical + warning,
+        'critical_count': len(critical),
+        'warning_count': len(warning),
     }
