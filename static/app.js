@@ -886,29 +886,30 @@ async function doGenerateTemplate() {
 function copyForConfluence() {
     const cs = (k) => document.getElementById(k)?.textContent || '0';
     const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
+    const C = 'padding:8px 16px;border:1px solid #ddd;';
 
     let html = '';
 
     // Title
-    html += `<h2 style="color:#1e3a5f;border-bottom:3px solid #1e3a5f;padding-bottom:8px">📋 ${escHtml(projectName)} Issue Report (${todayStr})</h2>`;
+    html += `<h2>📋 ${escHtml(projectName)} Issue Report (${todayStr})</h2>`;
 
-    // Summary cards - visual colored boxes
-    html += `<table style="border-collapse:separate;border-spacing:8px;margin-bottom:20px">
+    // Summary - td background-color only (Confluence safe)
+    html += `<table style="border-collapse:collapse;margin-bottom:16px">
         <tr>
-            <td style="padding:16px 28px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border-radius:8px;min-width:100px"><div style="font-size:2em;margin-bottom:4px">${cs('statTotal')}</div><div style="font-size:0.85em;opacity:0.9">Total Active</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#e8f0fe;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#0d6efd;font-weight:bold;margin-bottom:4px">${cs('statOngoing')}</div><div style="font-size:0.85em;color:#0d6efd">Ongoing</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statNew')}</div><div style="font-size:0.85em;color:#28a745">New</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#fff3cd;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#fd7e14;font-weight:bold;margin-bottom:4px">${cs('statReopened')}</div><div style="font-size:0.85em;color:#fd7e14">Reopened</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statCompleted')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
+            <td style="${C}background-color:#1e3a5f;color:white;text-align:center;font-weight:bold">${cs('statTotal')}<br/>Total Active</td>
+            <td style="${C}background-color:#e8f0fe;text-align:center"><strong style="color:#0d6efd">${cs('statOngoing')}</strong><br/>Ongoing</td>
+            <td style="${C}background-color:#e8f8e8;text-align:center"><strong style="color:#28a745">${cs('statNew')}</strong><br/>New</td>
+            <td style="${C}background-color:#fff3cd;text-align:center"><strong style="color:#fd7e14">${cs('statReopened')}</strong><br/>Reopened</td>
+            <td style="${C}background-color:#f0f0f0;text-align:center"><strong style="color:#6c757d">${cs('statCompleted')}</strong><br/>Resolved</td>
         </tr>
     </table>`;
 
-    // Milestones with emoji indicators
+    // Milestones
     const milestoneItems = document.querySelectorAll('.milestone-item');
     if (milestoneItems.length > 0) {
-        html += `<h3 style="color:#1e3a5f">🎯 Milestones</h3>`;
-        html += `<table style="border-collapse:collapse;margin-bottom:20px;width:auto">
-            <tr><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Phase</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Due Date</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">D-Day</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Status</th></tr>`;
+        html += `<h3>🎯 Milestones</h3>`;
+        html += `<table style="border-collapse:collapse;margin-bottom:16px">
+            <tr><th style="${C}background-color:#1e3a5f;color:white">Phase</th><th style="${C}background-color:#1e3a5f;color:white">Due Date</th><th style="${C}background-color:#1e3a5f;color:white">D-Day</th><th style="${C}background-color:#1e3a5f;color:white">Status</th></tr>`;
         milestoneItems.forEach(item => {
             const name = item.querySelector('.milestone-name')?.textContent || '';
             const date = item.querySelector('.milestone-date')?.textContent || '';
@@ -919,118 +920,74 @@ function copyForConfluence() {
             else if (ddayEl?.classList.contains('dday-danger')) { color = '#dc3545'; emoji = '🔴'; bg = '#fff0f0'; }
             else if (ddayEl?.classList.contains('dday-warn')) { color = '#fd7e14'; emoji = '🟡'; bg = '#fffbe6'; }
             else if (ddayEl?.classList.contains('dday-safe')) { color = '#0d6efd'; emoji = '🟢'; bg = '#f0fff0'; }
-            html += `<tr style="background:${bg}"><td style="padding:8px 16px;border:1px solid #ddd;font-weight:600">${escHtml(name)}</td><td style="padding:8px 16px;border:1px solid #ddd">${escHtml(date)}</td><td style="padding:8px 16px;border:1px solid #ddd;font-weight:bold;color:${color}">${escHtml(dday)}</td><td style="padding:8px 16px;border:1px solid #ddd;text-align:center;font-size:1.2em">${emoji}</td></tr>`;
+            html += `<tr><td style="${C}background-color:${bg};font-weight:bold">${escHtml(name)}</td><td style="${C}background-color:${bg}">${escHtml(date)}</td><td style="${C}background-color:${bg};font-weight:bold;color:${color}">${escHtml(dday)}</td><td style="${C}background-color:${bg};text-align:center">${emoji}</td></tr>`;
         });
         html += `</table>`;
     }
 
-    // Status / Module / Owner - parse from SVG title tags
+    // Charts - flat table with colored td cells (no nested tables)
     const chartBoxes = document.querySelectorAll('.chart-box');
     const distTables = [];
-    chartBoxes.forEach((box, boxIdx) => {
+    chartBoxes.forEach(box => {
         const title = box.querySelector('h3')?.textContent || '';
+        const items = [];
         const paths = box.querySelectorAll('svg path[fill]');
-        if (paths.length === 0) {
-            // Bar chart (Days) - parse from bar rows
-            const barRows = box.querySelectorAll('.bar-row');
-            if (barRows.length === 0) return;
-            let t = `<h3 style="color:#1e3a5f">📊 ${escHtml(title)}</h3>`;
-            t += `<table style="border-collapse:collapse;margin-bottom:20px;width:100%;max-width:500px">`;
-            const barItems = [];
-            let barMax = 0;
-            barRows.forEach(row => {
+        if (paths.length > 0) {
+            paths.forEach(path => {
+                const titleEl = path.querySelector('title');
+                if (!titleEl) return;
+                const match = titleEl.textContent.match(/^(.+):\s*(\d+)\s*\((\d+)%\)$/);
+                if (!match) return;
+                items.push({label: match[1].trim(), num: parseInt(match[2]), pct: match[3], bg: path.getAttribute('fill') || '#ccc'});
+            });
+        } else {
+            box.querySelectorAll('.bar-row').forEach(row => {
                 const label = row.querySelector('.bar-label')?.textContent || '';
                 const fill = row.querySelector('.bar-fill');
-                const num = parseInt(fill?.textContent) || 0;
-                const bg = fill?.style.background || '#1e3a5f';
-                if (num > barMax) barMax = num;
-                barItems.push({label, num, bg});
+                items.push({label, num: parseInt(fill?.textContent) || 0, pct: '', bg: fill?.style.background || '#1e3a5f'});
             });
-            barItems.forEach(({label, num, bg}) => {
-                const pct = barMax > 0 ? Math.max((num / barMax) * 100, 3) : 0;
-                t += `<tr>
-                    <td style="padding:6px 10px;border:1px solid #eee;width:120px;font-size:0.9em">${escHtml(label)}</td>
-                    <td style="padding:6px 4px;border:1px solid #eee">
-                        <table style="border-collapse:collapse;width:100%;height:20px"><tr>
-                            <td style="width:${pct}%;background:${bg};border-radius:3px;padding:2px 8px;color:white;font-size:0.8em;font-weight:600;white-space:nowrap">${num}</td>
-                            <td style="width:${100-pct}%"></td>
-                        </tr></table>
-                    </td>
-                </tr>`;
-            });
-            t += `</table>`;
-            distTables.push(t);
-            return;
         }
-
-        // Donut chart - parse from SVG path titles
-        const items = [];
-        let maxVal = 0;
-        paths.forEach(path => {
-            const titleEl = path.querySelector('title');
-            if (!titleEl) return;
-            // Format: "Label: Value (Pct%)"
-            const text = titleEl.textContent;
-            const match = text.match(/^(.+):\s*(\d+)\s*\((\d+)%\)$/);
-            if (!match) return;
-            const label = match[1].trim();
-            const num = parseInt(match[2]);
-            const pctText = `${num} (${match[3]}%)`;
-            const bg = path.getAttribute('fill') || '#ccc';
-            if (num > maxVal) maxVal = num;
-            items.push({bg, label, pctText, num});
-        });
-
         if (!items.length) return;
-        let t = `<h3 style="color:#1e3a5f">📊 ${escHtml(title)}</h3>`;
-        t += `<table style="border-collapse:collapse;margin-bottom:20px;width:100%;max-width:500px">`;
-        items.forEach(({bg, label, pctText, num}) => {
-            const barPct = maxVal > 0 ? Math.max((num / maxVal) * 100, 3) : 0;
-            t += `<tr>
-                <td style="padding:6px 10px;border:1px solid #eee;width:120px;font-size:0.9em">${escHtml(label)}</td>
-                <td style="padding:6px 4px;border:1px solid #eee">
-                    <table style="border-collapse:collapse;width:100%;height:20px"><tr>
-                        <td style="width:${barPct}%;background:${bg};border-radius:3px;padding:2px 8px;color:white;font-size:0.8em;font-weight:600;white-space:nowrap">${num}</td>
-                        <td style="width:${100-barPct}%"></td>
-                    </tr></table>
-                </td>
-                <td style="padding:6px 10px;border:1px solid #eee;width:80px;font-size:0.85em;color:#666;text-align:right">${escHtml(pctText)}</td>
-            </tr>`;
+
+        const maxVal = Math.max(...items.map(i => i.num));
+        const barCells = 15;
+        let t = `<h3>📊 ${escHtml(title)}</h3><table style="border-collapse:collapse;margin-bottom:16px">`;
+        items.forEach(({label, num, pct, bg}) => {
+            const filled = maxVal > 0 ? Math.max(Math.round((num / maxVal) * barCells), 1) : 0;
+            let barHtml = '';
+            for (let i = 0; i < filled; i++) barHtml += `<td style="background-color:${bg};width:10px;padding:0;border:none;height:12px"></td>`;
+            for (let i = filled; i < barCells; i++) barHtml += `<td style="background-color:#eee;width:10px;padding:0;border:none;height:12px"></td>`;
+            const valText = pct ? `${num} (${pct}%)` : `${num}`;
+            t += `<tr><td style="${C}">${escHtml(label)}</td><td style="padding:6px;border:1px solid #ddd"><table style="border-collapse:collapse"><tr>${barHtml}</tr></table></td><td style="${C}text-align:right;color:#666">${valText}</td></tr>`;
         });
         t += `</table>`;
         distTables.push(t);
     });
-    if (distTables.length) {
-        html += distTables.join('');
-    }
+    if (distTables.length) html += distTables.join('');
 
-    // Issue table with status badges
+    // Issue table - status as colored td background
     const issueTable = document.querySelector('.issue-table');
     if (issueTable) {
-        html += `<h3 style="color:#1e3a5f">📝 Issue Details</h3>`;
-        html += `<table style="border-collapse:collapse;margin-bottom:16px;width:100%">`;
+        html += `<h3>📝 Issue Details</h3><table style="border-collapse:collapse;margin-bottom:16px;width:100%">`;
         const ths = issueTable.querySelectorAll('thead th');
         html += '<tr>';
-        ths.forEach(th => {
-            html += `<th style="padding:8px 10px;border:1px solid #ddd;background:#1e3a5f;color:white;font-size:0.85em;white-space:nowrap">${th.textContent}</th>`;
-        });
+        ths.forEach(th => { html += `<th style="${C}background-color:#1e3a5f;color:white">${th.textContent}</th>`; });
         html += '</tr>';
-        const trs = issueTable.querySelectorAll('tbody tr');
-        trs.forEach((tr, i) => {
-            const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
-            html += `<tr style="background:${bg}">`;
+        issueTable.querySelectorAll('tbody tr').forEach((tr, i) => {
+            const rowBg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
+            html += '<tr>';
             tr.querySelectorAll('td').forEach((td, ci) => {
-                let content = td.textContent.trim();
-                // Status column (index 3) - add colored badge
+                const content = td.textContent.trim();
                 if (ci === 3) {
                     const badge = td.querySelector('.badge');
-                    let badgeBg = '#6c757d';
-                    if (badge?.classList.contains('badge-new')) badgeBg = '#28a745';
-                    else if (badge?.classList.contains('badge-progress')) badgeBg = '#0d6efd';
-                    else if (badge?.classList.contains('badge-closed')) badgeBg = '#6c757d';
-                    content = `<span style="background:${badgeBg};color:white;padding:2px 8px;border-radius:10px;font-size:0.85em;font-weight:600">${content}</span>`;
+                    let bg = '#cfe2ff', clr = '#0d6efd';
+                    if (badge?.classList.contains('badge-new')) { bg = '#e8f8e8'; clr = '#28a745'; }
+                    else if (badge?.classList.contains('badge-reopened')) { bg = '#fff3cd'; clr = '#fd7e14'; }
+                    else if (badge?.classList.contains('badge-closed')) { bg = '#f0f0f0'; clr = '#6c757d'; }
+                    html += `<td style="${C}background-color:${bg};color:${clr};font-weight:bold;text-align:center">${content}</td>`;
+                } else {
+                    html += `<td style="${C}background-color:${rowBg}">${content}</td>`;
                 }
-                html += `<td style="padding:5px 8px;border:1px solid #ddd;font-size:0.85em">${content}</td>`;
             });
             html += '</tr>';
         });
