@@ -569,13 +569,41 @@ body {
     display: inline-block;
 }
 .gantt-body {
+    display: flex;
     position: relative;
+}
+.gantt-labels-col {
+    flex-shrink: 0;
+    width: 200px;
+    min-width: 200px;
+}
+.gantt-label-header {
+    height: 26px;
+}
+.gantt-label-row {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    border-bottom: 1px solid #f5f5f5;
+}
+.gantt-label {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+    padding-right: 8px;
+}
+.gantt-tracks-scroll {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+.gantt-tracks-inner {
+    min-width: 400px;
 }
 .gantt-axis {
     position: relative;
     height: 22px;
-    margin-left: 220px;
-    margin-right: 40px;
     border-bottom: 1px solid #ddd;
     margin-bottom: 4px;
 }
@@ -587,23 +615,15 @@ body {
     bottom: 2px;
     white-space: nowrap;
 }
-.gantt-row {
+.gantt-track-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 0;
+    height: 32px;
     border-bottom: 1px solid #f5f5f5;
 }
-.gantt-row:hover {
+.gantt-track-row:hover {
     background: #fafbfc;
-}
-.gantt-label {
-    width: 212px;
-    min-width: 212px;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    overflow: hidden;
 }
 .gantt-id {
     font-size: 0.78em;

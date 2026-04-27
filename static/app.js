@@ -299,7 +299,11 @@ function renderTimelines(timelines) {
     const todayOffset = Math.ceil((todayDate - globalStart) / 86400000);
     const todayPct = Math.min((todayOffset / totalDays) * 100, 100);
 
-    let rowsHtml = '';
+    // Minimum track width: at least 12px per day for readability
+    const minTrackWidth = Math.max(totalDays * 12, 400);
+
+    let labelsHtml = '';
+    let tracksHtml = '';
     timelines.forEach(t => {
         let segHtml = '';
         t.history.forEach(h => {
@@ -318,12 +322,16 @@ function renderTimelines(timelines) {
 
         const totalIssueDays = t.history.reduce((s, h) => s + (h.days || 1), 0);
 
-        rowsHtml += `
-            <div class="gantt-row">
+        labelsHtml += `
+            <div class="gantt-label-row">
                 <div class="gantt-label">
                     <span class="gantt-id">${escHtml(t.id)}</span>
                     <span class="gantt-headline" title="${escHtml(t.headline)}">${escHtml(t.headline)}</span>
                 </div>
+            </div>`;
+
+        tracksHtml += `
+            <div class="gantt-track-row">
                 <div class="gantt-track">
                     ${segHtml}
                     <div class="gantt-today" style="left:${todayPct}%"></div>
@@ -346,8 +354,16 @@ function renderTimelines(timelines) {
         <div class="gantt-chart">
             ${legendHtml}
             <div class="gantt-body">
-                ${axisHtml}
-                ${rowsHtml}
+                <div class="gantt-labels-col">
+                    <div class="gantt-label-header"></div>
+                    ${labelsHtml}
+                </div>
+                <div class="gantt-tracks-scroll">
+                    <div class="gantt-tracks-inner" style="min-width:${minTrackWidth}px">
+                        ${axisHtml}
+                        ${tracksHtml}
+                    </div>
+                </div>
             </div>
         </div>`;
 }
