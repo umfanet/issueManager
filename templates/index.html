@@ -49,18 +49,20 @@
                     <input type="file" id="systemFile" accept=".xls,.xlsx">
                 </div>
             </div>
-            <div class="btn-row">
-                <button class="btn btn-primary" id="compareBtn" disabled onclick="doCompare()">Compare</button>
-                <button class="btn btn-template" id="templateBtn" disabled onclick="doGenerateTemplate()">Generate Template</button>
-                <div class="date-input">
-                    <label for="recordDate">Record Date</label>
-                    <input type="date" id="recordDate">
+            <div class="action-bar">
+                <div class="action-left">
+                    <button class="btn btn-primary" id="compareBtn" disabled onclick="doCompare()">Compare</button>
+                    <div class="date-input">
+                        <label for="recordDate">Record Date</label>
+                        <input type="date" id="recordDate">
+                    </div>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <span>Processing...</span>
+                    </div>
                 </div>
-                <button class="btn btn-download" id="downloadBtn" style="display:none" onclick="doDownload()">Download Updated Excel</button>
-                <button class="btn btn-export" id="exportBtn" style="display:none" onclick="doExportIssues()">Export Issue List</button>
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <span>Processing...</span>
+                <div class="action-right">
+                    <button class="btn btn-template" id="templateBtn" disabled onclick="doGenerateTemplate()">Generate Template</button>
                 </div>
             </div>
             <div class="error-msg" id="errorMsg"></div>
@@ -68,6 +70,10 @@
 
         <!-- Dashboard -->
         <div class="dashboard" id="dashboard">
+            <div class="dashboard-export-bar" id="dashboardExportBar" style="display:none">
+                <button class="btn btn-export-sm" onclick="doExportIssues()">Export Issue List</button>
+                <button class="btn btn-download-sm" id="downloadBtn" style="display:none" onclick="doDownload()">Download Compare Result</button>
+            </div>
             <div class="summary-cards">
                 <div class="card total">
                     <div class="number" id="statTotal">0</div>

@@ -635,7 +635,7 @@ async function loadDashboard() {
 
         if (issues.length === 0) {
             // No issues yet - show dashboard only if milestones exist
-            document.getElementById('exportBtn').style.display = 'none';
+            document.getElementById('dashboardExportBar').style.display = 'none';
             if ((data.milestones || []).length > 0) {
                 document.getElementById('dashboard').classList.add('active');
             } else {
@@ -679,9 +679,9 @@ async function loadDashboard() {
         renderTimelines(data.timelines);
         renderBottleneck(data.bottleneck);
 
-        // Show dashboard & export button
+        // Show dashboard & export bar
         document.getElementById('dashboard').classList.add('active');
-        document.getElementById('exportBtn').style.display = 'inline-block';
+        document.getElementById('dashboardExportBar').style.display = 'flex';
     } catch (e) {
         console.error('Dashboard load error:', e);
     }
@@ -745,8 +745,9 @@ async function doCompare() {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.tab-btn').classList.add('active');
 
-        // Show dashboard
+        // Show dashboard & download button
         document.getElementById('dashboard').classList.add('active');
+        document.getElementById('dashboardExportBar').style.display = 'flex';
         document.getElementById('downloadBtn').style.display = 'inline-block';
 
         // Reload timeline & bottleneck only (don't overwrite compare data)
