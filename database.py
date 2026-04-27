@@ -45,14 +45,15 @@ def _init_tables(conn):
     conn.commit()
 
 
-def upsert_issues(issues):
+def upsert_issues(issues, record_date=None):
     """Update or insert issues and track status changes.
 
     issues: list of dicts with keys: ID/IDWORKITEM, HEADLINE, Status, Module, Owner, Tag
+    record_date: date string (YYYY-MM-DD) to use for history. Defaults to today.
     Returns: dict with counts of new, updated, status_changed
     """
     conn = get_db()
-    today = date.today().isoformat()
+    today = record_date or date.today().isoformat()
     now = datetime.now().isoformat()
 
     counts = {'new': 0, 'updated': 0, 'status_changed': 0}

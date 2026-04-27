@@ -153,10 +153,37 @@ body {
     color: white;
 }
 .btn-download:hover { background: #218838; }
+.btn-template {
+    background: #0d6efd;
+    color: white;
+}
+.btn-template:hover { background: #0b5ed7; }
+.btn-template:disabled {
+    background: #a0b0c0;
+    cursor: not-allowed;
+}
 .btn-row {
     display: flex;
     gap: 12px;
     align-items: center;
+}
+.date-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+    color: #555;
+}
+.date-input label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+.date-input input[type="date"] {
+    padding: 6px 10px;
+    border: 1px solid #c0c8d4;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: #333;
 }
 
 /* === Loading === */

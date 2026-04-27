@@ -144,6 +144,35 @@ def _write_summary_sheet(ws, result):
     _auto_column_width(ws)
 
 
+def export_vendor_template(system_issues, output_path):
+    """Generate standard vendor template from system export data."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Issue List'
+    _write_header(ws)
+
+    for idx, issue in enumerate(system_issues, 1):
+        row = idx + 1
+        values = [
+            idx,
+            issue.get('ID', ''),
+            issue.get('Headline', ''),
+            'New',
+            '',  # Comments - empty for vendor to fill
+            '',  # Module
+            '',  # Owner
+            issue.get('Days since Opened', ''),
+            issue.get('Tag', ''),
+        ]
+        for col_idx, val in enumerate(values, 1):
+            cell = ws.cell(row=row, column=col_idx, value=val)
+            cell.border = THIN_BORDER
+            cell.alignment = Alignment(vertical='center', wrap_text=True)
+
+    _auto_column_width(ws)
+    wb.save(output_path)
+
+
 def _auto_column_width(ws):
     for col in ws.columns:
         max_len = 0

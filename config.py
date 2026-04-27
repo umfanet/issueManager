@@ -1,12 +1,18 @@
 import os
+import sys
 
 # App
-VERSION = 'v0.3.0'
+VERSION = 'v0.4.1'
 PORT = 5000
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50MB
 
-# Database
-DB_DIR = os.path.join(os.path.expanduser('~'), '.issue_manager')
+# Database - stored next to the exe (portable)
+if getattr(sys, 'frozen', False):
+    _APP_DIR = os.path.dirname(sys.executable)
+else:
+    _APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_DIR = _APP_DIR
 DB_PATH = os.path.join(DB_DIR, 'issues.db')
 
 # Issue tracking

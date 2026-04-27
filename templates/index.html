@@ -45,6 +45,11 @@
             </div>
             <div class="btn-row">
                 <button class="btn btn-primary" id="compareBtn" disabled onclick="doCompare()">Compare</button>
+                <button class="btn btn-template" id="templateBtn" disabled onclick="doGenerateTemplate()">Generate Template</button>
+                <div class="date-input">
+                    <label for="recordDate">Record Date</label>
+                    <input type="date" id="recordDate">
+                </div>
                 <button class="btn btn-download" id="downloadBtn" style="display:none" onclick="doDownload()">Download Updated Excel</button>
                 <div class="loading" id="loading">
                     <div class="spinner"></div>
