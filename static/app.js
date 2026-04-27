@@ -866,53 +866,74 @@ function copyForConfluence() {
     let html = '';
 
     // Title
-    html += `<h2 style="color:#1e3a5f">Issue Manager - ${escHtml(projectName)} (${todayStr})</h2>`;
+    html += `<h2 style="color:#1e3a5f;border-bottom:3px solid #1e3a5f;padding-bottom:8px">📋 ${escHtml(projectName)} Issue Report (${todayStr})</h2>`;
 
-    // Summary table
-    html += `<table style="border-collapse:collapse;margin-bottom:16px">
+    // Summary cards - visual colored boxes
+    html += `<table style="border-collapse:separate;border-spacing:8px;margin-bottom:20px">
         <tr>
-            <td style="padding:8px 20px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border:1px solid #ccc"><div style="font-size:1.5em">${cs('statTotal')}</div>Total Active</td>
-            <td style="padding:8px 20px;text-align:center;background:#e8f0fe;border:1px solid #ccc"><div style="font-size:1.5em;color:#0d6efd;font-weight:bold">${cs('statOngoing')}</div>Ongoing</td>
-            <td style="padding:8px 20px;text-align:center;background:#e8f8e8;border:1px solid #ccc"><div style="font-size:1.5em;color:#28a745;font-weight:bold">${cs('statNew')}</div>New</td>
-            <td style="padding:8px 20px;text-align:center;background:#f5f5f5;border:1px solid #ccc"><div style="font-size:1.5em;color:#6c757d;font-weight:bold">${cs('statCompleted')}</div>Resolved</td>
+            <td style="padding:16px 28px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border-radius:8px;min-width:100px"><div style="font-size:2em;margin-bottom:4px">${cs('statTotal')}</div><div style="font-size:0.85em;opacity:0.9">Total Active</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#e8f0fe;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#0d6efd;font-weight:bold;margin-bottom:4px">${cs('statOngoing')}</div><div style="font-size:0.85em;color:#0d6efd">Ongoing</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statNew')}</div><div style="font-size:0.85em;color:#28a745">New</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statCompleted')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
         </tr>
     </table>`;
 
-    // Milestones
+    // Milestones with emoji indicators
     const milestoneItems = document.querySelectorAll('.milestone-item');
     if (milestoneItems.length > 0) {
-        html += `<h3 style="color:#1e3a5f">Milestones</h3>`;
-        html += `<table style="border-collapse:collapse;margin-bottom:16px">
-            <tr style="background:#4472C4;color:white"><th style="padding:6px 12px;border:1px solid #ccc">Phase</th><th style="padding:6px 12px;border:1px solid #ccc">Due Date</th><th style="padding:6px 12px;border:1px solid #ccc">D-Day</th></tr>`;
+        html += `<h3 style="color:#1e3a5f">🎯 Milestones</h3>`;
+        html += `<table style="border-collapse:collapse;margin-bottom:20px;width:auto">
+            <tr><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Phase</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Due Date</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">D-Day</th><th style="padding:8px 16px;border:1px solid #ddd;background:#1e3a5f;color:white">Status</th></tr>`;
         milestoneItems.forEach(item => {
             const name = item.querySelector('.milestone-name')?.textContent || '';
             const date = item.querySelector('.milestone-date')?.textContent || '';
             const dday = item.querySelector('.milestone-dday')?.textContent || '';
             const ddayEl = item.querySelector('.milestone-dday');
-            let color = '#333';
-            if (ddayEl?.classList.contains('dday-danger') || ddayEl?.classList.contains('dday-over')) color = '#dc3545';
-            else if (ddayEl?.classList.contains('dday-warn')) color = '#fd7e14';
-            else if (ddayEl?.classList.contains('dday-safe')) color = '#0d6efd';
-            html += `<tr><td style="padding:6px 12px;border:1px solid #ccc;font-weight:600">${escHtml(name)}</td><td style="padding:6px 12px;border:1px solid #ccc">${escHtml(date)}</td><td style="padding:6px 12px;border:1px solid #ccc;font-weight:bold;color:${color}">${escHtml(dday)}</td></tr>`;
+            let color = '#333', emoji = '🟢', bg = '#f0fff0';
+            if (ddayEl?.classList.contains('dday-over')) { color = '#dc3545'; emoji = '🔴'; bg = '#fff0f0'; }
+            else if (ddayEl?.classList.contains('dday-danger')) { color = '#dc3545'; emoji = '🔴'; bg = '#fff0f0'; }
+            else if (ddayEl?.classList.contains('dday-warn')) { color = '#fd7e14'; emoji = '🟡'; bg = '#fffbe6'; }
+            else if (ddayEl?.classList.contains('dday-safe')) { color = '#0d6efd'; emoji = '🟢'; bg = '#f0fff0'; }
+            html += `<tr style="background:${bg}"><td style="padding:8px 16px;border:1px solid #ddd;font-weight:600">${escHtml(name)}</td><td style="padding:8px 16px;border:1px solid #ddd">${escHtml(date)}</td><td style="padding:8px 16px;border:1px solid #ddd;font-weight:bold;color:${color}">${escHtml(dday)}</td><td style="padding:8px 16px;border:1px solid #ddd;text-align:center;font-size:1.2em">${emoji}</td></tr>`;
         });
         html += `</table>`;
     }
 
-    // Status / Module / Owner distribution as simple tables
+    // Status / Module / Owner - horizontal bar charts using table cells
     const chartBoxes = document.querySelectorAll('.chart-box');
     const distTables = [];
     chartBoxes.forEach(box => {
         const title = box.querySelector('h3')?.textContent || '';
         const legendItems = box.querySelectorAll('.donut-legend-item');
         if (legendItems.length === 0) return;
-        let t = `<h3 style="color:#1e3a5f">${escHtml(title)}</h3>`;
-        t += `<table style="border-collapse:collapse;margin-bottom:12px">`;
+
+        // Parse values to calculate percentages for bar
+        const items = [];
+        let maxVal = 0;
         legendItems.forEach(item => {
             const colorEl = item.querySelector('.donut-legend-color');
             const bg = colorEl?.style.background || '#ccc';
             const label = item.querySelector('.donut-legend-label')?.textContent || '';
-            const value = item.querySelector('.donut-legend-value')?.textContent || '';
-            t += `<tr><td style="padding:4px 8px;border:1px solid #ccc"><span style="display:inline-block;width:10px;height:10px;background:${bg};border-radius:2px;margin-right:6px"></span>${escHtml(label)}</td><td style="padding:4px 8px;border:1px solid #ccc">${escHtml(value)}</td></tr>`;
+            const valueText = item.querySelector('.donut-legend-value')?.textContent || '';
+            const num = parseInt(valueText) || 0;
+            if (num > maxVal) maxVal = num;
+            items.push({bg, label, valueText, num});
+        });
+
+        let t = `<h3 style="color:#1e3a5f">📊 ${escHtml(title)}</h3>`;
+        t += `<table style="border-collapse:collapse;margin-bottom:20px;width:100%;max-width:500px">`;
+        items.forEach(({bg, label, valueText, num}) => {
+            const barPct = maxVal > 0 ? Math.max((num / maxVal) * 100, 3) : 0;
+            t += `<tr>
+                <td style="padding:6px 10px;border:1px solid #eee;width:120px;font-size:0.9em">${escHtml(label)}</td>
+                <td style="padding:6px 4px;border:1px solid #eee">
+                    <table style="border-collapse:collapse;width:100%;height:20px"><tr>
+                        <td style="width:${barPct}%;background:${bg};border-radius:3px;padding:2px 8px;color:white;font-size:0.8em;font-weight:600;white-space:nowrap">${num}</td>
+                        <td style="width:${100-barPct}%"></td>
+                    </tr></table>
+                </td>
+                <td style="padding:6px 10px;border:1px solid #eee;width:80px;font-size:0.85em;color:#666;text-align:right">${escHtml(valueText)}</td>
+            </tr>`;
         });
         t += `</table>`;
         distTables.push(t);
@@ -921,25 +942,33 @@ function copyForConfluence() {
         html += distTables.join('');
     }
 
-    // Issue table
+    // Issue table with status badges
     const issueTable = document.querySelector('.issue-table');
     if (issueTable) {
-        html += `<h3 style="color:#1e3a5f">Issue Details</h3>`;
+        html += `<h3 style="color:#1e3a5f">📝 Issue Details</h3>`;
         html += `<table style="border-collapse:collapse;margin-bottom:16px;width:100%">`;
-        // Header
         const ths = issueTable.querySelectorAll('thead th');
         html += '<tr>';
         ths.forEach(th => {
-            html += `<th style="padding:6px 10px;border:1px solid #ccc;background:#4472C4;color:white;font-size:0.9em">${th.textContent}</th>`;
+            html += `<th style="padding:8px 10px;border:1px solid #ddd;background:#1e3a5f;color:white;font-size:0.85em;white-space:nowrap">${th.textContent}</th>`;
         });
         html += '</tr>';
-        // Rows
         const trs = issueTable.querySelectorAll('tbody tr');
         trs.forEach((tr, i) => {
-            const bg = i % 2 === 0 ? '#fff' : '#f8f9fa';
+            const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
             html += `<tr style="background:${bg}">`;
-            tr.querySelectorAll('td').forEach(td => {
-                html += `<td style="padding:4px 8px;border:1px solid #ccc;font-size:0.85em">${td.textContent.trim()}</td>`;
+            tr.querySelectorAll('td').forEach((td, ci) => {
+                let content = td.textContent.trim();
+                // Status column (index 3) - add colored badge
+                if (ci === 3) {
+                    const badge = td.querySelector('.badge');
+                    let badgeBg = '#6c757d';
+                    if (badge?.classList.contains('badge-new')) badgeBg = '#28a745';
+                    else if (badge?.classList.contains('badge-progress')) badgeBg = '#0d6efd';
+                    else if (badge?.classList.contains('badge-closed')) badgeBg = '#6c757d';
+                    content = `<span style="background:${badgeBg};color:white;padding:2px 8px;border-radius:10px;font-size:0.85em;font-weight:600">${content}</span>`;
+                }
+                html += `<td style="padding:5px 8px;border:1px solid #ddd;font-size:0.85em">${content}</td>`;
             });
             html += '</tr>';
         });
