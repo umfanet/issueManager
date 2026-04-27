@@ -552,6 +552,21 @@ function showTab(tab) {
     else renderTable(currentData.vendor_only);
 }
 
+// === Timeline-only reload (after Compare) ===
+async function loadTimelineData() {
+    if (!currentProjectId) return;
+    try {
+        const resp = await fetch(`/api/projects/${currentProjectId}/dashboard`);
+        const data = await resp.json();
+        if (data.error) return;
+        renderMilestones(data.milestones || []);
+        renderTimelines(data.timelines);
+        renderBottleneck(data.bottleneck);
+    } catch (e) {
+        console.error('Timeline load error:', e);
+    }
+}
+
 // === Dashboard Loading (from DB) ===
 async function loadDashboard() {
     if (!currentProjectId) return;
@@ -682,8 +697,8 @@ async function doCompare() {
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('downloadBtn').style.display = 'inline-block';
 
-        // Reload timeline & bottleneck
-        loadDashboard();
+        // Reload timeline & bottleneck only (don't overwrite compare data)
+        loadTimelineData();
 
     } catch (err) {
         errorMsg.textContent = 'Error: ' + err.message;
