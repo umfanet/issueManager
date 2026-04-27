@@ -88,7 +88,7 @@ function onProjectChange() {
     const select = document.getElementById('projectSelect');
     currentProjectId = parseInt(select.value) || 1;
     localStorage.setItem('selectedProjectId', currentProjectId);
-    loadTimeline();
+    loadDashboard();
 }
 
 async function addProject() {
@@ -301,17 +301,62 @@ function showTab(tab) {
     else renderTable(currentData.vendor_only);
 }
 
-// === Timeline Loading ===
-async function loadTimeline() {
+// === Dashboard Loading (from DB) ===
+async function loadDashboard() {
+    if (!currentProjectId) return;
     try {
-        const url = currentProjectId ? `/timeline?project_id=${currentProjectId}` : '/timeline';
-        const resp = await fetch(url);
+        const resp = await fetch(`/api/projects/${currentProjectId}/dashboard`);
         const data = await resp.json();
         if (data.error) return;
+
+        const summary = data.summary || {};
+        const issues = data.issues || [];
+
+        if (issues.length === 0) {
+            // No data yet - hide dashboard
+            document.getElementById('dashboard').classList.remove('active');
+            return;
+        }
+
+        // Summary cards
+        document.getElementById('statTotal').textContent = summary.total || 0;
+        document.getElementById('statOngoing').textContent = summary.total || 0;
+        document.getElementById('statNew').textContent = 0;
+        document.getElementById('statCompleted').textContent = 0;
+
+        // Tab counts
+        document.getElementById('tabCountActive').textContent = summary.total || 0;
+        document.getElementById('tabCountResolved').textContent = 0;
+
+        // Charts
+        renderBarChart('chartStatus', summary.status || {});
+        renderBarChart('chartModule', summary.module || {});
+        renderBarChart('chartOwner', summary.owner || {});
+        document.getElementById('chartDays').innerHTML = '<div style="color:#999;font-size:0.9em;">Compare 실행 시 표시됩니다</div>';
+
+        // Table - convert DB format to display format
+        const tableIssues = issues.map(i => ({
+            ID: i.id,
+            HEADLINE: i.headline,
+            Status: i.current_status,
+            Module: i.module,
+            Owner: i.owner,
+            Tag: i.tag,
+            'Days since Opened': '',
+            Comments: [],
+        }));
+        renderTable(tableIssues);
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.tab-btn').classList.add('active');
+
+        // Timeline & bottleneck
         renderTimelines(data.timelines);
         renderBottleneck(data.bottleneck);
+
+        // Show dashboard
+        document.getElementById('dashboard').classList.add('active');
     } catch (e) {
-        console.error('Timeline load error:', e);
+        console.error('Dashboard load error:', e);
     }
 }
 
@@ -377,8 +422,8 @@ async function doCompare() {
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('downloadBtn').style.display = 'inline-block';
 
-        // Load timeline
-        loadTimeline();
+        // Reload timeline & bottleneck
+        loadDashboard();
 
     } catch (err) {
         errorMsg.textContent = 'Error: ' + err.message;
@@ -438,4 +483,4 @@ async function doGenerateTemplate() {
 }
 
 // === Init ===
-loadProjects().then(() => loadTimeline());
+loadProjects().then(() => loadDashboard());

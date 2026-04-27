@@ -12,6 +12,7 @@ from exporter import export_updated_vendor_file, export_vendor_template
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
+    get_project_issues, get_project_summary,
 )
 from datetime import datetime
 
@@ -83,6 +84,26 @@ def remove_project(project_id):
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/projects/<int:project_id>/dashboard', methods=['GET'])
+def project_dashboard(project_id):
+    """Get current project state from DB (no file upload needed)."""
+    try:
+        issues = get_project_issues(project_id)
+        summary = get_project_summary(project_id)
+        timelines = get_all_timelines(project_id=project_id)
+        bottleneck = get_bottleneck_analysis(project_id=project_id)
+        return jsonify({
+            'issues': issues,
+            'summary': summary,
+            'timelines': timelines,
+            'bottleneck': bottleneck,
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

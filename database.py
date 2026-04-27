@@ -128,6 +128,58 @@ def delete_project(project_id):
 
 # === Issue Operations ===
 
+def get_project_issues(project_id):
+    """Get all issues for a project, grouped by current_status."""
+    conn = get_db()
+    rows = conn.execute(
+        '''SELECT id, headline, module, owner, tag, current_status, first_seen_date
+           FROM issues
+           WHERE project_id = ?
+           ORDER BY first_seen_date''',
+        (project_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_project_summary(project_id):
+    """Get summary statistics for a project from DB."""
+    conn = get_db()
+
+    total = conn.execute(
+        'SELECT COUNT(*) FROM issues WHERE project_id = ?', (project_id,)
+    ).fetchone()[0]
+
+    status_counts = conn.execute(
+        '''SELECT current_status, COUNT(*) as cnt
+           FROM issues WHERE project_id = ?
+           GROUP BY current_status ORDER BY cnt DESC''',
+        (project_id,)
+    ).fetchall()
+
+    module_counts = conn.execute(
+        '''SELECT module, COUNT(*) as cnt
+           FROM issues WHERE project_id = ?
+           GROUP BY module ORDER BY cnt DESC''',
+        (project_id,)
+    ).fetchall()
+
+    owner_counts = conn.execute(
+        '''SELECT owner, COUNT(*) as cnt
+           FROM issues WHERE project_id = ?
+           GROUP BY owner ORDER BY cnt DESC''',
+        (project_id,)
+    ).fetchall()
+
+    conn.close()
+    return {
+        'total': total,
+        'status': {r['current_status']: r['cnt'] for r in status_counts},
+        'module': {r['module']: r['cnt'] for r in module_counts if r['module']},
+        'owner': {r['owner']: r['cnt'] for r in owner_counts if r['owner']},
+    }
+
+
 def upsert_issues(issues, record_date=None, project_id=1):
     """Update or insert issues and track status changes.
 
