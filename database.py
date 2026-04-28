@@ -531,46 +531,38 @@ def get_daily_snapshots(project_id):
 
 
 def get_bottleneck_analysis(project_id=None):
-    """Get bottleneck analysis - average days per status and stalled issues."""
+    """Get bottleneck analysis - average days per status and stalled issues (active only)."""
     conn = get_db()
     today = date.today().isoformat()
 
-    project_filter = 'AND i.project_id = ?' if project_id else ''
-    avg_params = (today, project_id) if project_id else (today,)
-    stalled_params = (today, project_id, today, STALLED_WARNING_DAYS) if project_id else (today, today, STALLED_WARNING_DAYS)
-
+    # Only include active issues (matching latest record date)
+    active_filter = ''
+    active_params = ()
     if project_id:
-        avg_by_status = conn.execute(
-            '''SELECT sh.status,
-                      COUNT(*) as count,
-                      ROUND(AVG(
-                          CASE WHEN sh.ended_at IS NULL
-                               THEN julianday(?) - julianday(sh.started_at)
-                               ELSE sh.duration_days
-                          END
-                      ), 1) as avg_days
-               FROM status_history sh
-               JOIN issues i ON i.id = sh.issue_id
-               WHERE i.project_id = ?
-               GROUP BY sh.status
-               ORDER BY avg_days DESC''',
-            avg_params
-        ).fetchall()
-    else:
-        avg_by_status = conn.execute(
-            '''SELECT status,
-                      COUNT(*) as count,
-                      ROUND(AVG(
-                          CASE WHEN ended_at IS NULL
-                               THEN julianday(?) - julianday(started_at)
-                               ELSE duration_days
-                          END
-                      ), 1) as avg_days
-               FROM status_history
-               GROUP BY status
-               ORDER BY avg_days DESC''',
-            (today,)
-        ).fetchall()
+        latest = _latest_record_date(conn, project_id)
+        if latest:
+            active_filter = 'AND i.project_id = ? AND i.last_record_date = ?'
+            active_params = (project_id, latest)
+        else:
+            active_filter = 'AND i.project_id = ?'
+            active_params = (project_id,)
+
+    avg_by_status = conn.execute(
+        f'''SELECT sh.status,
+                  COUNT(*) as count,
+                  ROUND(AVG(
+                      CASE WHEN sh.ended_at IS NULL
+                           THEN julianday(?) - julianday(sh.started_at)
+                           ELSE sh.duration_days
+                      END
+                  ), 1) as avg_days
+           FROM status_history sh
+           JOIN issues i ON i.id = sh.issue_id
+           WHERE 1=1 {active_filter}
+           GROUP BY sh.status
+           ORDER BY avg_days DESC''',
+        (today,) + active_params
+    ).fetchall()
 
     stalled_rows = conn.execute(
         f'''SELECT sh.issue_id, i.headline, sh.status,
@@ -578,10 +570,10 @@ def get_bottleneck_analysis(project_id=None):
            FROM status_history sh
            JOIN issues i ON i.id = sh.issue_id
            WHERE sh.ended_at IS NULL
-             {project_filter}
+             {active_filter}
              AND julianday(?) - julianday(sh.started_at) >= ?
            ORDER BY days_in_status DESC''',
-        stalled_params
+        (today,) + active_params + (today, STALLED_WARNING_DAYS)
     ).fetchall()
 
     # Classify into warning (3-6d) and critical (7d+)
