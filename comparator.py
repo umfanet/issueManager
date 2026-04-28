@@ -29,10 +29,13 @@ def compare_issues(vendor_issues, system_issues, known_map=None):
     for id_val in sorted(common_ids):
         v = vendor_by_id[id_val]
         s = system_by_id[id_val]
+        # If system says Rejected, override vendor status to Reopened
+        sys_status = (s.get('Status', '') or '').strip()
+        status = 'Reopened' if sys_status.lower() == 'rejected' else v['Status']
         common.append({
             'ID': id_val,
             'HEADLINE': v['HEADLINE'] or s['Headline'],
-            'Status': v['Status'],
+            'Status': status,
             'Comments': v['Comments'],
             'Module': v['Module'] or 'N/A',
             'Owner': v['Owner'],
