@@ -103,12 +103,13 @@ def generate_statistics(result):
 
     all_active = common + system_only  # currently active issues
 
-    # Summary counts
-    new_count = sum(1 for i in system_only if i['Status'] == 'New')
-    reopened_count = sum(1 for i in system_only if i['Status'] == 'Reopened')
+    # Summary counts - count New/Reopened from ALL active issues (common + system_only)
+    new_count = sum(1 for i in all_active if i['Status'] == 'New')
+    reopened_count = sum(1 for i in all_active if i['Status'] == 'Reopened')
+    ongoing_count = len(all_active) - new_count - reopened_count
     summary = {
         'total_active': len(all_active),
-        'common': len(common),
+        'common': ongoing_count,
         'resolved': len(vendor_only),
         'new': new_count,
         'reopened': reopened_count,
