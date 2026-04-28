@@ -863,15 +863,10 @@ async function loadDashboard() {
 
 // === Compare Action ===
 async function doCompare() {
-    const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
-    const hasVendor = vendorMode === 'file' ? vendorFile.files.length > 0 : vendorPasteArea.value.trim().length > 0;
-    const vendorMsg = hasVendor ? 'Vendor + System' : 'System only (DB 기존 정보 유지)';
-    if (!confirm(`"${projectName}" 프로젝트에 Compare합니다.\n[${vendorMsg}]\n계속하시겠습니까?`)) return;
-
     const formData = new FormData();
-    if (vendorMode === 'file') {
+    if (vendorMode === 'file' && vendorFile.files.length > 0) {
         formData.append('vendor_file', vendorFile.files[0]);
-    } else {
+    } else if (vendorMode === 'paste' && vendorPasteArea.value.trim()) {
         formData.append('vendor_paste', vendorPasteArea.value);
     }
     formData.append('system_file', systemFile.files[0]);
@@ -927,13 +922,14 @@ async function doCompare() {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.tab-btn').classList.add('active');
 
-        // Show dashboard & download button
+        // Show dashboard
         document.getElementById('dashboard').classList.add('active');
         document.getElementById('dashboardExportBar').style.display = 'flex';
         document.getElementById('exportBtn').style.display = 'inline-block';
 
-        // Reload timeline & bottleneck only (don't overwrite compare data)
-        loadTimelineData();
+        // Show Save button (preview mode - not saved to DB yet)
+        document.getElementById('saveBtn').style.display = 'inline-block';
+        document.getElementById('previewBanner').style.display = 'block';
 
     } catch (err) {
         errorMsg.textContent = 'Error: ' + err.message;
@@ -941,6 +937,25 @@ async function doCompare() {
     } finally {
         loading.classList.remove('active');
         compareBtn.disabled = false;
+    }
+}
+
+async function doSaveCompare() {
+    const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
+    if (!confirm(`"${projectName}" 프로젝트에 저장합니다.\n계속하시겠습니까?`)) return;
+
+    try {
+        const resp = await fetch('/compare/save', { method: 'POST' });
+        const data = await resp.json();
+        if (!resp.ok) {
+            alert(data.error || '저장 실패');
+            return;
+        }
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('previewBanner').style.display = 'none';
+        loadTimelineData();
+    } catch (e) {
+        alert('저장 오류: ' + e.message);
     }
 }
 

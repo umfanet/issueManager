@@ -5,7 +5,7 @@ import threading
 import tempfile
 
 from flask import Flask, render_template, request, send_file, jsonify
-from config import VERSION, PORT, MAX_UPLOAD_SIZE
+from config import VERSION, PORT, MAX_UPLOAD_SIZE, DB_DIR, DB_PATH
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
 from exporter import export_vendor_template, export_issue_list, export_postmortem
@@ -195,6 +195,7 @@ def postmortem_export(project_id):
 
 @app.route('/compare', methods=['POST'])
 def compare():
+    """Preview compare results without saving to DB."""
     vendor_file = request.files.get('vendor_file')
     vendor_paste = request.form.get('vendor_paste', '').strip()
     system_file = request.files.get('system_file')
@@ -211,7 +212,6 @@ def compare():
     system_bytes = system_file.read()
 
     try:
-        # Vendor file is optional
         has_vendor = bool(vendor_file or vendor_paste)
         if vendor_paste:
             vendor_issues = parse_vendor_paste(vendor_paste)
@@ -219,7 +219,6 @@ def compare():
             vendor_bytes = vendor_file.read()
             vendor_issues = parse_vendor_file(vendor_bytes, filename=vendor_file.filename)
         else:
-            # No vendor file: use DB active issues as vendor baseline
             db_issues = get_project_issues(project_id)
             vendor_issues = [{
                 'IDWORKITEM': i['id'], 'HEADLINE': i['headline'],
@@ -236,15 +235,51 @@ def compare():
         result = compare_issues(vendor_issues, system_issues, known_map=known_map)
         stats = generate_statistics(result)
 
-        # Record status history in DB
+        # Store result in session for Save step (don't write to DB yet)
+        app.config['PENDING_COMPARE'] = {
+            'project_id': project_id,
+            'record_date': record_date,
+            'current_date': current_date,
+            'result': result,
+            'stats': stats,
+        }
+
+        return jsonify({
+            'stats': stats,
+            'common': result['common'],
+            'vendor_only': result['vendor_only'],
+            'system_only': result['system_only'],
+            'preview': True,
+        })
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
+
+
+@app.route('/compare/save', methods=['POST'])
+def compare_save():
+    """Save the previewed compare result to DB."""
+    pending = app.config.get('PENDING_COMPARE')
+    if not pending:
+        return jsonify({'error': '저장할 Compare 결과가 없습니다.'}), 400
+
+    try:
+        project_id = pending['project_id']
+        record_date = pending['record_date']
+        current_date = pending['current_date']
+        result = pending['result']
+        stats = pending['stats']
+
+        # Auto-backup DB (once per day)
+        _auto_backup_db(current_date)
+
+        # Now save to DB
         all_active = result['common'] + result['system_only']
         db_counts = upsert_issues(all_active, record_date=record_date, project_id=project_id)
 
-        # Record lifecycle events
         active_ids = [i.get('ID', '') for i in all_active]
         record_issue_events(project_id, current_date, active_ids, result)
 
-        # Save daily snapshot for trend tracking
         save_daily_snapshot(project_id, current_date, {
             'total': stats['summary']['total_active'],
             'ongoing': stats['summary']['common'],
@@ -253,16 +288,30 @@ def compare():
             'resolved': stats['summary']['resolved'],
         })
 
-        return jsonify({
-            'stats': stats,
-            'common': result['common'],
-            'vendor_only': result['vendor_only'],
-            'system_only': result['system_only'],
-            'db_counts': db_counts,
-        })
+        app.config['PENDING_COMPARE'] = None
+        return jsonify({'ok': True, 'db_counts': db_counts})
     except Exception as e:
         traceback.print_exc()
-        return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
+
+
+def _auto_backup_db(current_date):
+    """Auto-backup DB once per day before first save."""
+    backup_dir = os.path.join(DB_DIR, 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    backup_name = f'issues_{current_date.replace("-","")}.db'
+    backup_path = os.path.join(backup_dir, backup_name)
+
+    if not os.path.exists(backup_path):
+        import shutil
+        if os.path.exists(DB_PATH):
+            shutil.copy2(DB_PATH, backup_path)
+
+        # Clean old backups (keep 7 days)
+        import glob
+        backups = sorted(glob.glob(os.path.join(backup_dir, 'issues_*.db')))
+        while len(backups) > 7:
+            os.remove(backups.pop(0))
 
 
 @app.route('/export-issues', methods=['POST'])

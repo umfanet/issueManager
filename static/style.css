@@ -975,3 +975,27 @@ body {
     margin-top: 12px;
     display: none;
 }
+.preview-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff3cd;
+    color: #856404;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+.btn-save {
+    padding: 8px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-weight: 700;
+    cursor: pointer;
+    background: #28a745;
+    color: white;
+    transition: background 0.2s;
+}
+.btn-save:hover { background: #218838; }
