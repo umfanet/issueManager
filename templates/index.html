@@ -89,7 +89,6 @@
         <div class="dashboard" id="dashboard">
             <div class="dashboard-export-bar" id="dashboardExportBar" style="display:none">
                 <button class="btn btn-copy-sm" onclick="copyForConfluence()">Copy for Confluence</button>
-                <button class="btn btn-postmortem-sm" onclick="doPostmortemExport()">Export Postmortem</button>
             </div>
             <div class="summary-cards">
                 <div class="card total">
@@ -179,6 +178,10 @@
                     <h3>Stalled Issues</h3>
                     <div id="stalledList"><div style="color:#999;font-size:0.9em;">No stalled issues</div></div>
                 </div>
+            </div>
+
+            <div style="text-align:right;margin-bottom:24px">
+                <button class="btn btn-postmortem-sm" onclick="doPostmortemExport()">Export Postmortem</button>
             </div>
         </div>
     </div>
