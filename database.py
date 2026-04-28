@@ -226,16 +226,17 @@ def delete_milestone(milestone_id):
 
 # === Issue Operations ===
 
-def get_known_issues_map(before_date=None):
-    """Return dict of issue IDs -> {module, owner} that existed before the given date.
-    If before_date is provided, only returns issues last seen BEFORE that date.
-    This prevents same-day re-compares from marking new issues as Reopened.
+def get_known_issues_map(current_date=None):
+    """Return dict of issue IDs -> {module, owner} for issues that existed BEFORE the given date.
+    Uses first_seen_date to distinguish:
+      - first_seen_date < current_date → was known before → Reopened
+      - first_seen_date = current_date → first appeared today → New (even on re-compare)
     """
     conn = get_db()
-    if before_date:
+    if current_date:
         rows = conn.execute(
-            "SELECT id, module, owner FROM issues WHERE last_record_date != '' AND last_record_date < ?",
-            (before_date,)
+            "SELECT id, module, owner FROM issues WHERE first_seen_date < ?",
+            (current_date,)
         ).fetchall()
     else:
         rows = conn.execute('SELECT id, module, owner FROM issues').fetchall()
