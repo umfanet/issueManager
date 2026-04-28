@@ -993,6 +993,10 @@ async function doExportIssues() {
     }
 }
 
+function doPostmortemExport() {
+    window.location.href = `/api/projects/${currentProjectId}/postmortem`;
+}
+
 async function doGenerateTemplate() {
     const formData = new FormData();
     formData.append('system_file', systemFile.files[0]);

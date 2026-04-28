@@ -8,14 +8,14 @@ from flask import Flask, render_template, request, send_file, jsonify
 from config import VERSION, PORT, MAX_UPLOAD_SIZE
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
-from exporter import export_vendor_template, export_issue_list
+from exporter import export_vendor_template, export_issue_list, export_postmortem
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
     get_project_issues, get_project_summary, get_known_issues_map,
     get_milestones, add_milestone, update_milestone, delete_milestone,
     save_daily_snapshot, get_daily_snapshots,
-    record_issue_events, get_latest_event_counts,
+    record_issue_events, get_latest_event_counts, get_postmortem_data,
     update_project_notes, get_project_notes,
 )
 from datetime import datetime, date as date_cls
@@ -168,6 +168,26 @@ def remove_milestone(milestone_id):
         delete_milestone(milestone_id)
         return jsonify({'ok': True})
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# === Postmortem Export ===
+
+@app.route('/api/projects/<int:project_id>/postmortem', methods=['GET'])
+def postmortem_export(project_id):
+    try:
+        issues, all_statuses = get_postmortem_data(project_id)
+        if not issues:
+            return jsonify({'error': '데이터가 없습니다.'}), 400
+        output_path = os.path.join(UPLOAD_FOLDER, 'postmortem.xlsx')
+        export_postmortem(issues, all_statuses, output_path)
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=f'postmortem_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+        )
+    except Exception as e:
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 

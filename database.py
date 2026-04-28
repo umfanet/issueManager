@@ -460,6 +460,70 @@ def upsert_issues(issues, record_date=None, project_id=1):
     return counts
 
 
+# === Postmortem ===
+
+def get_postmortem_data(project_id):
+    """Get full issue lifecycle data for postmortem export."""
+    conn = get_db()
+    today = date.today().isoformat()
+
+    # All issues ever in this project
+    issues = conn.execute(
+        'SELECT id, headline, module, owner, tag, current_status, first_seen_date FROM issues WHERE project_id = ? ORDER BY first_seen_date',
+        (project_id,)
+    ).fetchall()
+
+    result = []
+    all_statuses = set()
+
+    for issue in issues:
+        iid = issue['id']
+
+        # Status history with durations
+        history = conn.execute(
+            '''SELECT status, started_at, ended_at,
+                      CASE WHEN ended_at IS NULL
+                           THEN MAX(1, CAST(julianday(?) - julianday(started_at) AS INTEGER))
+                           ELSE MAX(1, duration_days)
+                      END as days
+               FROM status_history WHERE issue_id = ? ORDER BY started_at''',
+            (today, iid)
+        ).fetchall()
+
+        status_days = {}
+        total_days = 0
+        for h in history:
+            s = h['status']
+            d = h['days'] or 0
+            all_statuses.add(s)
+            status_days[s] = status_days.get(s, 0) + d
+            total_days += d
+
+        # Event counts
+        events = conn.execute(
+            'SELECT event_type, COUNT(*) as cnt FROM issue_events WHERE issue_id = ? AND project_id = ? GROUP BY event_type',
+            (iid, project_id)
+        ).fetchall()
+        event_counts = {e['event_type']: e['cnt'] for e in events}
+
+        result.append({
+            'id': iid,
+            'headline': issue['headline'],
+            'module': issue['module'] or '',
+            'owner': issue['owner'] or '',
+            'tag': issue['tag'] or '',
+            'current_status': issue['current_status'] or '',
+            'first_seen': issue['first_seen_date'] or '',
+            'total_days': total_days,
+            'status_days': status_days,
+            'reopen_count': event_counts.get('reopened', 0),
+            'resolve_count': event_counts.get('resolved', 0),
+        })
+
+    conn.close()
+    return result, sorted(all_statuses)
+
+
 # === Timeline & Analysis ===
 
 

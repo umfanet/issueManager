@@ -89,6 +89,65 @@ def export_issue_list(issues, output_path):
     wb.save(output_path)
 
 
+HIGHLIGHT_FILL = PatternFill(start_color='FCE4EC', end_color='FCE4EC', fill_type='solid')
+
+
+def export_postmortem(issues, all_statuses, output_path):
+    """Export postmortem report with per-status duration for each issue."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Postmortem'
+
+    # Dynamic headers: fixed columns + one column per status
+    fixed_headers = ['No', 'ID', 'Headline', 'Module', 'Owner', 'Tag', 'Current Status', 'First Seen']
+    status_headers = list(all_statuses)
+    tail_headers = ['Total Days', 'Resolved', 'Reopened']
+    all_headers = fixed_headers + status_headers + tail_headers
+
+    _write_header(ws, all_headers)
+
+    # Status columns get a different header color
+    status_start_col = len(fixed_headers) + 1
+    STATUS_HEADER_FILL = PatternFill(start_color='2D5F8A', end_color='2D5F8A', fill_type='solid')
+    for i, s in enumerate(status_headers):
+        cell = ws.cell(row=1, column=status_start_col + i)
+        cell.fill = STATUS_HEADER_FILL
+
+    for idx, issue in enumerate(issues, 1):
+        row = idx + 1
+        values = [
+            idx,
+            issue['id'],
+            issue['headline'],
+            issue['module'],
+            issue['owner'],
+            issue['tag'],
+            issue['current_status'],
+            issue['first_seen'],
+        ]
+        # Status duration columns
+        for s in status_headers:
+            days = issue['status_days'].get(s, '')
+            values.append(f'{days}d' if days else '')
+        # Tail columns
+        values.append(f'{issue["total_days"]}d')
+        values.append(issue['resolve_count'] or '')
+        values.append(issue['reopen_count'] or '')
+
+        for col_idx, val in enumerate(values, 1):
+            cell = ws.cell(row=row, column=col_idx, value=val)
+            cell.border = THIN_BORDER
+            cell.alignment = Alignment(vertical='center', wrap_text=True)
+
+        # Highlight reopened issues
+        if issue['reopen_count'] > 0:
+            for col_idx in range(1, len(all_headers) + 1):
+                ws.cell(row=row, column=col_idx).fill = HIGHLIGHT_FILL
+
+    _auto_column_width(ws)
+    wb.save(output_path)
+
+
 def _auto_column_width(ws):
     for col in ws.columns:
         max_len = 0
