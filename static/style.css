@@ -801,6 +801,20 @@ body {
     font-weight: 600;
 }
 /* Today marker */
+/* Weekend shading */
+.tl-weekend-band {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.04);
+    z-index: 0;
+    pointer-events: none;
+}
+.tl-axis-weekend {
+    color: #dc3545 !important;
+    font-weight: 600;
+}
+/* Today marker */
 .tl-today-line {
     position: absolute;
     top: 0;

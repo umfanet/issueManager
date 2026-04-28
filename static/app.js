@@ -348,9 +348,25 @@ function renderTimelines(timelines) {
         dateLabels.push({label: `${dt.getMonth()+1}/${dt.getDate()}`, pct: (d / totalDays) * 100});
     }
 
+    // Detect weekends for shading
+    let weekendBands = '';
+    for (let d = 0; d <= totalDays; d++) {
+        const dt = new Date(globalStart.getTime() + d * 86400000);
+        const dow = dt.getDay(); // 0=Sun, 6=Sat
+        if (dow === 0 || dow === 6) {
+            const leftPct = (d / totalDays) * 100;
+            const widthPct = (1 / totalDays) * 100;
+            weekendBands += `<div class="tl-weekend-band" style="left:${leftPct}%;width:${widthPct}%"></div>`;
+        }
+    }
+
     let axisHtml = '<div class="tl-axis">';
     dateLabels.forEach(dl => {
-        axisHtml += `<span class="tl-axis-label" style="left:${dl.pct}%">${dl.label}</span>`;
+        // Check if this date is weekend
+        const dlDate = new Date(globalStart.getTime() + (dl.pct / 100) * totalDays * 86400000);
+        const isWeekend = dlDate.getDay() === 0 || dlDate.getDay() === 6;
+        const labelClass = isWeekend ? 'tl-axis-label tl-axis-weekend' : 'tl-axis-label';
+        axisHtml += `<span class="${labelClass}" style="left:${dl.pct}%">${dl.label}</span>`;
     });
     axisHtml += '</div>';
 
@@ -407,6 +423,7 @@ function renderTimelines(timelines) {
             <div class="tl-track-row">
                 <div class="tl-track">
                     ${dotsHtml}
+                    ${weekendBands}
                     <div class="tl-today-line" style="left:${todayPct}%"></div>
                 </div>
                 <span class="tl-days">${totalIssueDays}d</span>
