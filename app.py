@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 from config import VERSION, PORT, MAX_UPLOAD_SIZE, DB_DIR, DB_PATH
 from parser import parse_vendor_file, parse_vendor_paste, parse_system_file
 from comparator import compare_issues, generate_statistics
-from exporter import export_vendor_template, export_issue_list, export_postmortem
+from exporter import export_issue_list, export_postmortem
 from database import (
     upsert_issues, get_all_timelines, get_bottleneck_analysis,
     get_projects, create_project, rename_project, delete_project,
@@ -334,32 +334,6 @@ def export_issues():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
-
-@app.route('/generate-template', methods=['POST'])
-def generate_template():
-    system_file = request.files.get('system_file')
-    if not system_file:
-        return jsonify({'error': '시스템 파일을 업로드해주세요.'}), 400
-
-    try:
-        system_bytes = system_file.read()
-        system_issues = parse_system_file(system_bytes, filename=system_file.filename)
-
-        if not system_issues:
-            return jsonify({'error': '시스템 파일에서 이슈를 찾을 수 없습니다.'}), 400
-
-        output_path = os.path.join(UPLOAD_FOLDER, 'vendor_template.xlsx')
-        export_vendor_template(system_issues, output_path)
-
-        return send_file(
-            output_path,
-            as_attachment=True,
-            download_name=f'vendor_template_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
-        )
-    except Exception as e:
-        traceback.print_exc()
-        return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
 
 
 @app.route('/timeline', methods=['GET'])

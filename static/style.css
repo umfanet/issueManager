@@ -278,15 +278,6 @@ body {
     background: #a0b0c0;
     cursor: not-allowed;
 }
-.btn-template {
-    background: #0d6efd;
-    color: white;
-}
-.btn-template:hover { background: #0b5ed7; }
-.btn-template:disabled {
-    background: #a0b0c0;
-    cursor: not-allowed;
-}
 .btn-export-sm {
     padding: 6px 16px;
     border: none;

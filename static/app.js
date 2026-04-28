@@ -201,12 +201,9 @@ vendorPasteArea.addEventListener('input', () => {
     checkReady();
 });
 
-const templateBtn = document.getElementById('templateBtn');
-
 function checkReady() {
     const systemOk = systemFile.files.length > 0;
     compareBtn.disabled = !systemOk;
-    templateBtn.disabled = !systemOk;
 }
 
 // === Rendering ===
@@ -1011,50 +1008,6 @@ async function doExportIssues() {
 
 function doPostmortemExport() {
     window.location.href = `/api/projects/${currentProjectId}/postmortem`;
-}
-
-async function doGenerateTemplate() {
-    const formData = new FormData();
-    formData.append('system_file', systemFile.files[0]);
-
-    const loading = document.getElementById('loading');
-    const errorMsg = document.getElementById('errorMsg');
-    errorMsg.style.display = 'none';
-    loading.classList.add('active');
-    templateBtn.disabled = true;
-
-    try {
-        const resp = await fetch('/generate-template', { method: 'POST', body: formData });
-
-        if (!resp.ok) {
-            let errMsg = 'Template generation failed.';
-            try {
-                const data = await resp.json();
-                errMsg = data.error || errMsg;
-            } catch (e) {}
-            errorMsg.textContent = errMsg;
-            errorMsg.style.display = 'block';
-            return;
-        }
-
-        // Download the file
-        const blob = await resp.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = resp.headers.get('Content-Disposition')?.split('filename=')[1] || 'vendor_template.xlsx';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-
-    } catch (err) {
-        errorMsg.textContent = 'Error: ' + err.message;
-        errorMsg.style.display = 'block';
-    } finally {
-        loading.classList.remove('active');
-        templateBtn.disabled = false;
-    }
 }
 
 // === Copy for Confluence ===
