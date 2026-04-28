@@ -1058,18 +1058,42 @@ function copyForConfluence() {
         html += `</table>`;
     }
 
-    // Copy to clipboard as HTML
-    const blob = new Blob([html], {type: 'text/html'});
-    const clipItem = new ClipboardItem({'text/html': blob});
-    navigator.clipboard.write([clipItem]).then(() => {
+    // Copy to clipboard as HTML (with fallback for HTTP)
+    const onSuccess = () => {
         const btn = document.querySelector('.btn-copy-sm');
         const orig = btn.textContent;
         btn.textContent = 'Copied!';
         btn.style.background = '#28a745';
         setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
-    }).catch(err => {
-        alert('복사 실패: ' + err.message);
-    });
+    };
+
+    if (navigator.clipboard && window.ClipboardItem) {
+        const blob = new Blob([html], {type: 'text/html'});
+        navigator.clipboard.write([new ClipboardItem({'text/html': blob})]).then(onSuccess).catch(() => fallbackCopy(html, onSuccess));
+    } else {
+        fallbackCopy(html, onSuccess);
+    }
+}
+
+function fallbackCopy(html, onSuccess) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    tmp.style.position = 'fixed';
+    tmp.style.left = '-9999px';
+    document.body.appendChild(tmp);
+    const range = document.createRange();
+    range.selectNodeContents(tmp);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    try {
+        document.execCommand('copy');
+        onSuccess();
+    } catch (e) {
+        alert('복사 실패: ' + e.message);
+    }
+    sel.removeAllRanges();
+    document.body.removeChild(tmp);
 }
 
 // === Landing Screen ===
