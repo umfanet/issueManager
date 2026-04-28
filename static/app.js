@@ -1094,7 +1094,14 @@ function copyForConfluence() {
             const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
             html += `<tr style="background:${bg}">`;
             tr.querySelectorAll('td').forEach((td, ci) => {
-                let content = td.textContent.trim();
+                let content;
+                if (ci === 8) {
+                    // Comments: preserve line breaks (div → br)
+                    content = td.innerHTML.replace(/<div>/g, '').replace(/<\/div>/g, '<br>').trim();
+                    if (content.endsWith('<br>')) content = content.slice(0, -4);
+                } else {
+                    content = td.textContent.trim();
+                }
                 if (ci === 3) {
                     const badge = td.querySelector('.badge');
                     let color = '#0d6efd';
