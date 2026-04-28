@@ -815,6 +815,9 @@ async function loadDashboard() {
 
 // === Compare Action ===
 async function doCompare() {
+    const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
+    if (!confirm(`"${projectName}" 프로젝트에 Compare합니다.\n계속하시겠습니까?`)) return;
+
     const formData = new FormData();
     if (vendorMode === 'file') {
         formData.append('vendor_file', vendorFile.files[0]);
