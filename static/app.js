@@ -1073,5 +1073,71 @@ function copyForConfluence() {
     });
 }
 
+// === Landing Screen ===
+async function showLanding() {
+    try {
+        const resp = await fetch('/api/projects');
+        const data = await resp.json();
+        const projects = data.projects || [];
+
+        // If only 1 project (Default), skip landing
+        if (projects.length <= 1) {
+            selectProjectFromLanding(projects[0]?.id || 1);
+            return;
+        }
+
+        const list = document.getElementById('landingProjectList');
+        list.innerHTML = '';
+        projects.forEach(p => {
+            const dateText = p.last_accessed ? new Date(p.last_accessed).toLocaleDateString() : '';
+            list.innerHTML += `
+                <div class="landing-project-item" onclick="selectProjectFromLanding(${p.id})">
+                    <span class="landing-project-icon">📁</span>
+                    <span class="landing-project-name">${escHtml(p.name)}</span>
+                    <span class="landing-project-date">${dateText}</span>
+                </div>`;
+        });
+
+        document.getElementById('projectLanding').style.display = 'flex';
+        document.getElementById('appMain').style.display = 'none';
+    } catch (e) {
+        console.error('Landing error:', e);
+        selectProjectFromLanding(1);
+    }
+}
+
+async function selectProjectFromLanding(projectId) {
+    currentProjectId = projectId;
+    localStorage.setItem('selectedProjectId', projectId);
+
+    document.getElementById('projectLanding').style.display = 'none';
+    document.getElementById('appMain').style.display = '';
+
+    await loadProjects();
+    document.getElementById('projectSelect').value = projectId;
+    currentProjectId = projectId;
+    loadDashboard();
+}
+
+async function addProjectFromLanding() {
+    const name = prompt('새 프로젝트 이름:');
+    if (!name || !name.trim()) return;
+    try {
+        const resp = await fetch('/api/projects', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name: name.trim()}),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            alert(data.error || '프로젝트 생성 실패');
+            return;
+        }
+        selectProjectFromLanding(data.id);
+    } catch (e) {
+        alert('오류: ' + e.message);
+    }
+}
+
 // === Init ===
-loadProjects().then(() => loadDashboard());
+showLanding();

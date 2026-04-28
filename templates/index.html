@@ -7,6 +7,19 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <!-- Project Selection Screen -->
+    <div class="project-landing" id="projectLanding">
+        <div class="landing-card">
+            <h1 class="landing-title">Issue Manager</h1>
+            <p class="landing-version">{{ version }}</p>
+            <p class="landing-subtitle">프로젝트를 선택하세요</p>
+            <div class="landing-list" id="landingProjectList"></div>
+            <button class="landing-add-btn" onclick="addProjectFromLanding()">+ 새 프로젝트</button>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-main" id="appMain" style="display:none">
     <div class="header">
         <h1>Issue Manager</h1>
         <div class="project-selector">
@@ -155,6 +168,7 @@
             </div>
         </div>
     </div>
+    </div><!-- /app-main -->
 
     <script src="/static/app.js"></script>
 </body>

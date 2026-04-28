@@ -6,6 +6,89 @@ body {
     color: #333;
 }
 
+/* === Project Landing Screen === */
+.project-landing {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3a5f, #2d5f8a);
+}
+.landing-card {
+    background: white;
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    width: 420px;
+    max-width: 90vw;
+    text-align: center;
+}
+.landing-title {
+    font-size: 1.8em;
+    color: #1e3a5f;
+    margin-bottom: 4px;
+}
+.landing-version {
+    font-size: 0.85em;
+    color: #999;
+    margin-bottom: 20px;
+}
+.landing-subtitle {
+    font-size: 1em;
+    color: #666;
+    margin-bottom: 20px;
+}
+.landing-list {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+}
+.landing-project-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border: 1px solid #e8ecf0;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+}
+.landing-project-item:hover {
+    border-color: #0d6efd;
+    background: #f0f6ff;
+}
+.landing-project-icon {
+    font-size: 1.3em;
+    margin-right: 12px;
+}
+.landing-project-name {
+    flex: 1;
+    font-weight: 600;
+    color: #333;
+    font-size: 1em;
+}
+.landing-project-date {
+    font-size: 0.78em;
+    color: #999;
+}
+.landing-add-btn {
+    width: 100%;
+    padding: 12px;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    background: none;
+    color: #888;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.landing-add-btn:hover {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
 /* === Header === */
 .header {
     background: linear-gradient(135deg, #1e3a5f, #2d5f8a);
