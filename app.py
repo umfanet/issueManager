@@ -310,7 +310,7 @@ def _auto_backup_db(current_date):
         # Clean old backups (keep 7 days)
         import glob
         backups = sorted(glob.glob(os.path.join(backup_dir, 'issues_*.db')))
-        while len(backups) > 7:
+        while len(backups) > 30:
             os.remove(backups.pop(0))
 
 
