@@ -431,6 +431,15 @@ def upsert_issues(issues, record_date=None, project_id=1):
                 )
                 counts['status_changed'] += 1
 
+    # Clear last_record_date for issues NOT in this Compare (same project, same date)
+    active_ids = [issue.get('ID') or issue.get('IDWORKITEM', '') for issue in issues if issue.get('ID') or issue.get('IDWORKITEM')]
+    if active_ids:
+        placeholders = ','.join('?' * len(active_ids))
+        conn.execute(
+            f"UPDATE issues SET last_record_date = '' WHERE project_id = ? AND last_record_date = ? AND id NOT IN ({placeholders})",
+            [project_id, today] + active_ids
+        )
+
     conn.commit()
     conn.close()
     return counts
