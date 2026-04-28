@@ -63,7 +63,6 @@ def export_issue_list(issues, output_path):
 
     headers = ['No', 'ID', 'Headline', 'Status', 'Comments', 'Module', 'Owner', 'Days since Opened', 'Tag']
     _write_header(ws, headers)
-        cell.border = THIN_BORDER
 
     for idx, issue in enumerate(issues, 1):
         row = idx + 1
