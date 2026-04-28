@@ -15,6 +15,7 @@ from database import (
     get_project_issues, get_project_summary, get_known_issues_map,
     get_milestones, add_milestone, update_milestone, delete_milestone,
     save_daily_snapshot, get_daily_snapshots,
+    update_project_notes, get_project_notes,
 )
 from datetime import datetime, date as date_cls
 import traceback
@@ -99,6 +100,7 @@ def project_dashboard(project_id):
         bottleneck = get_bottleneck_analysis(project_id=project_id)
         milestones = get_milestones(project_id)
         snapshots = get_daily_snapshots(project_id)
+        notes = get_project_notes(project_id)
         return jsonify({
             'issues': issues,
             'summary': summary,
@@ -106,10 +108,21 @@ def project_dashboard(project_id):
             'bottleneck': bottleneck,
             'milestones': milestones,
             'snapshots': snapshots,
+            'notes': notes,
         })
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+
+# === Project Notes API ===
+
+@app.route('/api/projects/<int:project_id>/notes', methods=['PUT'])
+def save_notes(project_id):
+    data = request.get_json(silent=True) or {}
+    notes = data.get('notes', '')
+    update_project_notes(project_id, notes)
+    return jsonify({'ok': True})
 
 
 # === Milestone API ===

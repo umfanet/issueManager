@@ -104,6 +104,11 @@ def _migrate(conn):
     if 'days_since_opened' not in columns:
         conn.execute("ALTER TABLE issues ADD COLUMN days_since_opened TEXT NOT NULL DEFAULT ''")
 
+    # Add notes column to projects if missing
+    proj_columns = [row[1] for row in conn.execute('PRAGMA table_info(projects)').fetchall()]
+    if 'notes' not in proj_columns:
+        conn.execute("ALTER TABLE projects ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
+
     # Create index after columns are guaranteed to exist
     conn.execute('CREATE INDEX IF NOT EXISTS idx_issues_project ON issues(project_id)')
 
@@ -145,6 +150,22 @@ def rename_project(project_id, new_name):
     )
     conn.commit()
     conn.close()
+
+
+def update_project_notes(project_id, notes):
+    """Update project notes."""
+    conn = get_db()
+    conn.execute('UPDATE projects SET notes = ? WHERE id = ?', (notes, project_id))
+    conn.commit()
+    conn.close()
+
+
+def get_project_notes(project_id):
+    """Get project notes."""
+    conn = get_db()
+    row = conn.execute('SELECT notes FROM projects WHERE id = ?', (project_id,)).fetchone()
+    conn.close()
+    return row['notes'] if row and row['notes'] else ''
 
 
 def delete_project(project_id):

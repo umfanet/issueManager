@@ -508,6 +508,56 @@ body {
     outline: none;
 }
 
+/* === Project Notes === */
+.notes-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    margin-bottom: 24px;
+}
+.notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.notes-header h3 {
+    font-size: 1em;
+    color: #1e3a5f;
+    margin: 0;
+}
+.notes-header .btn-icon {
+    background: #1e3a5f;
+    color: white;
+    border: none;
+}
+.notes-header .btn-icon:hover {
+    background: #2d5f8a;
+}
+.notes-display {
+    font-size: 0.9em;
+    color: #444;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.notes-editor {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid #c0c8d4;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9em;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+}
+.notes-editor:focus {
+    border-color: #0d6efd;
+}
+
 /* === Charts === */
 .charts-grid {
     display: grid;

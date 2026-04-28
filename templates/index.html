@@ -117,6 +117,15 @@
                 <div id="milestoneList"><div style="color:#999;font-size:0.9em;">[+] 버튼으로 단계를 추가하세요.</div></div>
             </div>
 
+            <div class="notes-section" id="notesSection">
+                <div class="notes-header">
+                    <h3>Project Notes</h3>
+                    <button class="btn-icon" id="notesEditBtn" onclick="toggleNotesEdit()" title="편집">&#9998;</button>
+                </div>
+                <div id="notesDisplay" class="notes-display"><span style="color:#999">메모를 추가하려면 ✎ 버튼을 클릭하세요.</span></div>
+                <textarea id="notesEditor" class="notes-editor" style="display:none" placeholder="담당자, 연락처, 회의 일정 등을 자유롭게 작성하세요..."></textarea>
+            </div>
+
             <div class="charts-grid">
                 <div class="chart-box"><h3>Status</h3><div id="chartStatus" class="bar-chart"></div></div>
                 <div class="chart-box"><h3>Days since Opened</h3><div id="chartDays" class="bar-chart"></div></div>

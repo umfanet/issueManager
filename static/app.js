@@ -629,6 +629,56 @@ async function deleteMilestoneItem(id) {
     }
 }
 
+// === Project Notes ===
+function renderNotes(notes) {
+    const display = document.getElementById('notesDisplay');
+    if (notes && notes.trim()) {
+        display.innerHTML = escHtml(notes).replace(/\n/g, '<br>');
+    } else {
+        display.innerHTML = '<span style="color:#999">메모를 추가하려면 ✎ 버튼을 클릭하세요.</span>';
+    }
+    document.getElementById('notesEditor').value = notes || '';
+}
+
+function toggleNotesEdit() {
+    const display = document.getElementById('notesDisplay');
+    const editor = document.getElementById('notesEditor');
+    const btn = document.getElementById('notesEditBtn');
+
+    if (editor.style.display === 'none') {
+        editor.style.display = '';
+        display.style.display = 'none';
+        btn.innerHTML = '&#10003;';
+        btn.title = '저장';
+        editor.focus();
+    } else {
+        saveNotes();
+    }
+}
+
+async function saveNotes() {
+    const editor = document.getElementById('notesEditor');
+    const display = document.getElementById('notesDisplay');
+    const btn = document.getElementById('notesEditBtn');
+    const notes = editor.value;
+
+    try {
+        await fetch(`/api/projects/${currentProjectId}/notes`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({notes}),
+        });
+    } catch (e) {
+        console.error('Notes save error:', e);
+    }
+
+    renderNotes(notes);
+    editor.style.display = 'none';
+    display.style.display = '';
+    btn.innerHTML = '&#9998;';
+    btn.title = '편집';
+}
+
 // === Trend Chart ===
 function renderTrend(snapshots) {
     const section = document.getElementById('trendSection');
@@ -725,6 +775,7 @@ async function loadTimelineData() {
         const data = await resp.json();
         if (data.error) return;
         renderMilestones(data.milestones || []);
+        renderNotes(data.notes || '');
         renderTimelines(data.timelines);
         renderTrend(data.snapshots);
         renderBottleneck(data.bottleneck);
@@ -744,8 +795,9 @@ async function loadDashboard() {
         const summary = data.summary || {};
         const issues = data.issues || [];
 
-        // Milestones (always show, even without issues)
+        // Milestones & Notes (always show, even without issues)
         renderMilestones(data.milestones || []);
+        renderNotes(data.notes || '');
 
         if (issues.length === 0) {
             // No issues yet - show dashboard only if milestones exist
