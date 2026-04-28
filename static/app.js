@@ -220,17 +220,13 @@ function renderBarChart(containerId, data) {
         return;
     }
     const maxVal = Math.max(...entries.map(e => e[1]));
+    let html = '';
     entries.forEach(([label, value], i) => {
         const pct = maxVal > 0 ? (value / maxVal * 100) : 0;
         const color = COLORS[i % COLORS.length];
-        container.innerHTML += `
-            <div class="bar-row">
-                <div class="bar-label" title="${label}">${label || '(empty)'}</div>
-                <div class="bar-track">
-                    <div class="bar-fill" style="width:${pct}%;background:${color}">${value}</div>
-                </div>
-            </div>`;
+        html += `<div class="bar-row"><div class="bar-label" title="${label}">${label || '(empty)'}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}">${value}</div></div></div>`;
     });
+    container.innerHTML = html;
 }
 
 function renderDonutChart(containerId, data) {
@@ -295,22 +291,22 @@ function renderDonutChart(containerId, data) {
 
 function renderTable(issues) {
     const tbody = document.getElementById('issueTableBody');
-    tbody.innerHTML = '';
+    let html = '';
     issues.forEach((issue, idx) => {
         const comments = (issue.Comments || []).map(c => `<div>${escHtml(c)}</div>`).join('');
-        tbody.innerHTML += `
-            <tr>
-                <td>${idx + 1}</td>
-                <td style="white-space:nowrap">${escHtml(issue.ID)}</td>
-                <td>${escHtml(issue.HEADLINE)}</td>
-                <td><span class="badge ${getStatusBadgeClass(issue.Status)}">${escHtml(issue.Status)}</span></td>
-                <td>${escHtml(issue.Module || '')}</td>
-                <td>${escHtml(issue.Owner || '')}</td>
-                <td style="text-align:center">${escHtml(issue['Days since Opened'] || '')}</td>
-                <td>${escHtml(issue.Tag || '')}</td>
-                <td class="comments-cell">${comments || '-'}</td>
-            </tr>`;
+        html += `<tr>
+            <td>${idx + 1}</td>
+            <td style="white-space:nowrap">${escHtml(issue.ID)}</td>
+            <td>${escHtml(issue.HEADLINE)}</td>
+            <td><span class="badge ${getStatusBadgeClass(issue.Status)}">${escHtml(issue.Status)}</span></td>
+            <td>${escHtml(issue.Module || '')}</td>
+            <td>${escHtml(issue.Owner || '')}</td>
+            <td style="text-align:center">${escHtml(issue['Days since Opened'] || '')}</td>
+            <td>${escHtml(issue.Tag || '')}</td>
+            <td class="comments-cell">${comments || '-'}</td>
+        </tr>`;
     });
+    tbody.innerHTML = html;
 }
 
 function renderTimelines(timelines) {

@@ -16,7 +16,8 @@ from database import (
     get_milestones, add_milestone, update_milestone, delete_milestone,
     save_daily_snapshot, get_daily_snapshots,
 )
-from datetime import datetime
+from datetime import datetime, date as date_cls
+import traceback
 
 
 def get_base_path():
@@ -107,7 +108,6 @@ def project_dashboard(project_id):
             'snapshots': snapshots,
         })
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
@@ -183,7 +183,6 @@ def compare():
         system_issues = parse_system_file(system_bytes, filename=system_file.filename)
 
         record_date = request.form.get('record_date', '').strip() or None
-        from datetime import date as date_cls
         current_date = record_date or date_cls.today().isoformat()
 
         known_map = get_known_issues_map(current_date=current_date)
@@ -211,7 +210,6 @@ def compare():
             'db_counts': db_counts,
         })
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
 
@@ -234,7 +232,6 @@ def export_issues():
             download_name=f'issue_list_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         )
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
@@ -261,7 +258,6 @@ def generate_template():
             download_name=f'vendor_template_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
         )
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'error': f'처리 중 오류 발생: {str(e)}'}), 500
 
@@ -277,7 +273,6 @@ def timeline():
             'bottleneck': bottleneck,
         })
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 

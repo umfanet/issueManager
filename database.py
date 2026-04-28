@@ -4,15 +4,21 @@ from datetime import datetime, date
 from config import DB_DIR, DB_PATH, STALLED_WARNING_DAYS, STALLED_CRITICAL_DAYS
 
 
+_db_initialized = False
+
+
 def get_db():
-    """Get database connection, creating tables if needed."""
+    """Get database connection. Init/migrate only on first call."""
+    global _db_initialized
     os.makedirs(DB_DIR, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
     conn.execute('PRAGMA foreign_keys=ON')
-    _init_tables(conn)
-    _migrate(conn)
+    if not _db_initialized:
+        _init_tables(conn)
+        _migrate(conn)
+        _db_initialized = True
     return conn
 
 
@@ -411,73 +417,58 @@ def upsert_issues(issues, record_date=None, project_id=1):
 
 # === Timeline & Analysis ===
 
-def get_issue_timeline(issue_id):
-    """Get status history timeline for a specific issue."""
-    conn = get_db()
-    today = date.today().isoformat()
-
-    rows = conn.execute(
-        '''SELECT status, started_at, ended_at,
-                  CASE WHEN ended_at IS NULL
-                       THEN CAST(julianday(?) - julianday(started_at) AS INTEGER)
-                       ELSE duration_days
-                  END as days
-           FROM status_history
-           WHERE issue_id = ?
-           ORDER BY started_at''',
-        (today, issue_id)
-    ).fetchall()
-
-    conn.close()
-    return [dict(r) for r in rows]
-
 
 def get_all_timelines(project_id=None):
-    """Get status timelines for active issues only (latest record date)."""
+    """Get status timelines for active issues only (latest record date). Single JOIN query."""
     conn = get_db()
     today = date.today().isoformat()
 
+    # Build issue filter
     if project_id:
         latest = _latest_record_date(conn, project_id)
         if latest:
-            issues = conn.execute(
-                'SELECT id, headline, current_status, first_seen_date FROM issues WHERE project_id = ? AND last_record_date = ? ORDER BY first_seen_date',
-                (project_id, latest)
-            ).fetchall()
+            issue_filter = 'WHERE i.project_id = ? AND i.last_record_date = ?'
+            params = (today, project_id, latest)
         else:
-            issues = conn.execute(
-                'SELECT id, headline, current_status, first_seen_date FROM issues WHERE project_id = ? ORDER BY first_seen_date',
-                (project_id,)
-            ).fetchall()
+            issue_filter = 'WHERE i.project_id = ?'
+            params = (today, project_id)
     else:
-        issues = conn.execute(
-            'SELECT id, headline, current_status, first_seen_date FROM issues ORDER BY first_seen_date'
-        ).fetchall()
+        issue_filter = ''
+        params = (today,)
 
-    result = []
-    for issue in issues:
-        history = conn.execute(
-            '''SELECT status, started_at, ended_at,
-                      CASE WHEN ended_at IS NULL
-                           THEN MAX(1, CAST(julianday(?) - julianday(started_at) AS INTEGER))
-                           ELSE MAX(1, duration_days)
-                      END as days
-               FROM status_history
-               WHERE issue_id = ?
-               ORDER BY started_at''',
-            (today, issue['id'])
-        ).fetchall()
+    rows = conn.execute(
+        f'''SELECT i.id, i.headline, i.current_status, i.first_seen_date,
+                   sh.status as sh_status, sh.started_at, sh.ended_at,
+                   CASE WHEN sh.ended_at IS NULL
+                        THEN MAX(1, CAST(julianday(?) - julianday(sh.started_at) AS INTEGER))
+                        ELSE MAX(1, sh.duration_days)
+                   END as days
+            FROM issues i
+            LEFT JOIN status_history sh ON sh.issue_id = i.id
+            {issue_filter}
+            ORDER BY i.first_seen_date, sh.started_at''',
+        params
+    ).fetchall()
 
-        result.append({
-            'id': issue['id'],
-            'headline': issue['headline'],
-            'current_status': issue['current_status'],
-            'first_seen_date': issue['first_seen_date'],
-            'history': [dict(h) for h in history],
-        })
+    # Group by issue
+    issues_map = {}
+    for r in rows:
+        iid = r['id']
+        if iid not in issues_map:
+            issues_map[iid] = {
+                'id': iid, 'headline': r['headline'],
+                'current_status': r['current_status'],
+                'first_seen_date': r['first_seen_date'],
+                'history': [],
+            }
+        if r['sh_status']:
+            issues_map[iid]['history'].append({
+                'status': r['sh_status'], 'started_at': r['started_at'],
+                'ended_at': r['ended_at'], 'days': r['days'],
+            })
 
     conn.close()
-    return result
+    return list(issues_map.values())
 
 
 # === Daily Snapshots ===
