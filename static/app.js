@@ -925,86 +925,7 @@ function copyForConfluence() {
         html += `</table>`;
     }
 
-    // Status / Module / Owner - parse from SVG title tags
-    const chartBoxes = document.querySelectorAll('.chart-box');
-    const distTables = [];
-    chartBoxes.forEach((box, boxIdx) => {
-        const title = box.querySelector('h3')?.textContent || '';
-        const paths = box.querySelectorAll('svg path[fill]');
-        if (paths.length === 0) {
-            // Bar chart (Days) - parse from bar rows
-            const barRows = box.querySelectorAll('.bar-row');
-            if (barRows.length === 0) return;
-            let t = `<h3 style="color:#1e3a5f">📊 ${escHtml(title)}</h3>`;
-            t += `<table style="border-collapse:collapse;margin-bottom:20px;width:100%;max-width:500px">`;
-            const barItems = [];
-            let barMax = 0;
-            barRows.forEach(row => {
-                const label = row.querySelector('.bar-label')?.textContent || '';
-                const fill = row.querySelector('.bar-fill');
-                const num = parseInt(fill?.textContent) || 0;
-                const bg = fill?.style.background || '#1e3a5f';
-                if (num > barMax) barMax = num;
-                barItems.push({label, num, bg});
-            });
-            barItems.forEach(({label, num, bg}) => {
-                const pct = barMax > 0 ? Math.max((num / barMax) * 100, 3) : 0;
-                t += `<tr>
-                    <td style="padding:6px 10px;border:1px solid #eee;width:120px;font-size:0.9em">${escHtml(label)}</td>
-                    <td style="padding:6px 4px;border:1px solid #eee">
-                        <table style="border-collapse:collapse;width:100%;height:20px"><tr>
-                            <td style="width:${pct}%;background:${bg};border-radius:3px;padding:2px 8px;color:white;font-size:0.8em;font-weight:600;white-space:nowrap">${num}</td>
-                            <td style="width:${100-pct}%"></td>
-                        </tr></table>
-                    </td>
-                </tr>`;
-            });
-            t += `</table>`;
-            distTables.push(t);
-            return;
-        }
-
-        // Donut chart - parse from SVG path titles
-        const items = [];
-        let maxVal = 0;
-        paths.forEach(path => {
-            const titleEl = path.querySelector('title');
-            if (!titleEl) return;
-            const text = titleEl.textContent;
-            const match = text.match(/^(.+):\s*(\d+)\s*\((\d+)%\)$/);
-            if (!match) return;
-            const label = match[1].trim();
-            const num = parseInt(match[2]);
-            const pctText = `${num} (${match[3]}%)`;
-            const bg = path.getAttribute('fill') || '#ccc';
-            if (num > maxVal) maxVal = num;
-            items.push({bg, label, pctText, num});
-        });
-
-        if (!items.length) return;
-        let t = `<h3 style="color:#1e3a5f">📊 ${escHtml(title)}</h3>`;
-        t += `<table style="border-collapse:collapse;margin-bottom:20px;width:100%;max-width:500px">`;
-        items.forEach(({bg, label, pctText, num}) => {
-            const barPct = maxVal > 0 ? Math.max((num / maxVal) * 100, 3) : 0;
-            t += `<tr>
-                <td style="padding:6px 10px;border:1px solid #eee;width:120px;font-size:0.9em">${escHtml(label)}</td>
-                <td style="padding:6px 4px;border:1px solid #eee">
-                    <table style="border-collapse:collapse;width:100%;height:20px"><tr>
-                        <td style="width:${barPct}%;background:${bg};border-radius:3px;padding:2px 8px;color:white;font-size:0.8em;font-weight:600;white-space:nowrap">${num}</td>
-                        <td style="width:${100-barPct}%"></td>
-                    </tr></table>
-                </td>
-                <td style="padding:6px 10px;border:1px solid #eee;width:80px;font-size:0.85em;color:#666;text-align:right">${escHtml(pctText)}</td>
-            </tr>`;
-        });
-        t += `</table>`;
-        distTables.push(t);
-    });
-    if (distTables.length) {
-        html += distTables.join('');
-    }
-
-    // Issue table with status badges
+    // Issue table - status as colored bold text (no background, readable everywhere)
     const issueTable = document.querySelector('.issue-table');
     if (issueTable) {
         html += `<h3 style="color:#1e3a5f">📝 Issue Details</h3>`;
@@ -1023,12 +944,11 @@ function copyForConfluence() {
                 let content = td.textContent.trim();
                 if (ci === 3) {
                     const badge = td.querySelector('.badge');
-                    let badgeBg = '#6c757d';
-                    if (badge?.classList.contains('badge-new')) badgeBg = '#28a745';
-                    else if (badge?.classList.contains('badge-reopened')) badgeBg = '#fd7e14';
-                    else if (badge?.classList.contains('badge-progress')) badgeBg = '#0d6efd';
-                    else if (badge?.classList.contains('badge-closed')) badgeBg = '#6c757d';
-                    content = `<span style="background:${badgeBg};color:white;padding:2px 8px;border-radius:10px;font-size:0.85em;font-weight:600">${content}</span>`;
+                    let color = '#0d6efd';
+                    if (badge?.classList.contains('badge-new')) color = '#28a745';
+                    else if (badge?.classList.contains('badge-reopened')) color = '#fd7e14';
+                    else if (badge?.classList.contains('badge-closed')) color = '#6c757d';
+                    content = `<strong style="color:${color}">${content}</strong>`;
                 }
                 html += `<td style="padding:5px 8px;border:1px solid #ddd;font-size:0.85em">${content}</td>`;
             });
