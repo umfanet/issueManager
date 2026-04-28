@@ -204,9 +204,8 @@ vendorPasteArea.addEventListener('input', () => {
 const templateBtn = document.getElementById('templateBtn');
 
 function checkReady() {
-    const vendorOk = vendorMode === 'file' ? vendorFile.files.length > 0 : vendorPasteArea.value.trim().length > 0;
     const systemOk = systemFile.files.length > 0;
-    compareBtn.disabled = !(vendorOk && systemOk);
+    compareBtn.disabled = !systemOk;
     templateBtn.disabled = !systemOk;
 }
 
@@ -865,7 +864,9 @@ async function loadDashboard() {
 // === Compare Action ===
 async function doCompare() {
     const projectName = document.getElementById('projectSelect')?.selectedOptions[0]?.textContent || '';
-    if (!confirm(`"${projectName}" 프로젝트에 Compare합니다.\n계속하시겠습니까?`)) return;
+    const hasVendor = vendorMode === 'file' ? vendorFile.files.length > 0 : vendorPasteArea.value.trim().length > 0;
+    const vendorMsg = hasVendor ? 'Vendor + System' : 'System only (DB 기존 정보 유지)';
+    if (!confirm(`"${projectName}" 프로젝트에 Compare합니다.\n[${vendorMsg}]\n계속하시겠습니까?`)) return;
 
     const formData = new FormData();
     if (vendorMode === 'file') {

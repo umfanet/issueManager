@@ -205,17 +205,28 @@ def compare():
     except (TypeError, ValueError):
         project_id = 1
 
-    if (not vendor_file and not vendor_paste) or not system_file:
-        return jsonify({'error': '업체 파일(또는 붙여넣기)과 시스템 파일을 모두 입력해주세요.'}), 400
+    if not system_file:
+        return jsonify({'error': '시스템 파일을 업로드해주세요.'}), 400
 
     system_bytes = system_file.read()
 
     try:
+        # Vendor file is optional
+        has_vendor = bool(vendor_file or vendor_paste)
         if vendor_paste:
             vendor_issues = parse_vendor_paste(vendor_paste)
-        else:
+        elif vendor_file:
             vendor_bytes = vendor_file.read()
             vendor_issues = parse_vendor_file(vendor_bytes, filename=vendor_file.filename)
+        else:
+            # No vendor file: use DB active issues as vendor baseline
+            db_issues = get_project_issues(project_id)
+            vendor_issues = [{
+                'IDWORKITEM': i['id'], 'HEADLINE': i['headline'],
+                'Status': i['current_status'] or '', 'Comments': i['comments'].split('\n') if i.get('comments') else [],
+                'Module': i['module'] or '', 'Owner': i['owner'] or '',
+                'Days since Opened': i.get('days_since_opened', ''), 'Tag': i['tag'] or '',
+            } for i in db_issues]
         system_issues = parse_system_file(system_bytes, filename=system_file.filename)
 
         record_date = request.form.get('record_date', '').strip() or None
