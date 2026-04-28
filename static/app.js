@@ -279,15 +279,15 @@ function renderDonutChart(containerId, data) {
         const displayLabel = label.length > 14 ? label.substring(0, 12) + '..' : label;
 
         labels += `<line x1="${arcMidX}" y1="${arcMidY}" x2="${lblX}" y2="${lblY}" stroke="${color}" stroke-width="1" opacity="0.6"/>`;
-        labels += `<text x="${textX}" y="${lblY - 2}" text-anchor="${textAnchor}" fill="${color}" font-size="11" font-weight="600">${displayLabel}</text>`;
-        labels += `<text x="${textX}" y="${lblY + 12}" text-anchor="${textAnchor}" fill="#888" font-size="10">${value} (${pctText}%)</text>`;
+        labels += `<text x="${textX}" y="${lblY - 2}" text-anchor="${textAnchor}" fill="${color}" font-size="13" font-weight="600">${displayLabel}</text>`;
+        labels += `<text x="${textX}" y="${lblY + 14}" text-anchor="${textAnchor}" fill="#888" font-size="11">${value} (${pctText}%)</text>`;
 
         angle = endAngle;
     });
 
     const svg = `<svg width="${svgSize}" height="${svgSize}" viewBox="0 0 ${svgSize} ${svgSize}" style="overflow:visible">
         ${arcs}${labels}
-        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="24" font-weight="700">${total}</text>
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#333" font-size="28" font-weight="700">${total}</text>
     </svg>`;
 
     container.innerHTML = `<div style="display:flex;justify-content:center">${svg}</div>`;
