@@ -901,7 +901,7 @@ async function doExportIssues() {
                 id: cells[1].textContent.trim(),
                 headline: cells[2].textContent.trim(),
                 current_status: cells[3].textContent.trim(),
-                comments: cells[8].textContent.trim(),
+                comments: cells[8].innerText.trim(),
                 module: cells[4].textContent.trim(),
                 owner: cells[5].textContent.trim(),
                 days: cells[6].textContent.trim(),
