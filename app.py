@@ -15,6 +15,7 @@ from database import (
     get_project_issues, get_project_summary, get_known_issues_map,
     get_milestones, add_milestone, update_milestone, delete_milestone,
     save_daily_snapshot, get_daily_snapshots,
+    record_issue_events, get_latest_event_counts,
     update_project_notes, get_project_notes,
 )
 from datetime import datetime, date as date_cls
@@ -101,6 +102,7 @@ def project_dashboard(project_id):
         milestones = get_milestones(project_id)
         snapshots = get_daily_snapshots(project_id)
         notes = get_project_notes(project_id)
+        event_counts = get_latest_event_counts(project_id)
         return jsonify({
             'issues': issues,
             'summary': summary,
@@ -109,6 +111,7 @@ def project_dashboard(project_id):
             'milestones': milestones,
             'snapshots': snapshots,
             'notes': notes,
+            'event_counts': event_counts,
         })
     except Exception as e:
         traceback.print_exc()
@@ -205,6 +208,10 @@ def compare():
         # Record status history in DB
         all_active = result['common'] + result['system_only']
         db_counts = upsert_issues(all_active, record_date=record_date, project_id=project_id)
+
+        # Record lifecycle events
+        active_ids = [i.get('ID', '') for i in all_active]
+        record_issue_events(project_id, current_date, active_ids, result)
 
         # Save daily snapshot for trend tracking
         save_daily_snapshot(project_id, current_date, {

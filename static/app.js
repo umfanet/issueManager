@@ -811,8 +811,9 @@ async function loadDashboard() {
             return;
         }
 
-        // Summary cards - derive from DB status counts
+        // Summary cards - derive from DB status counts + event counts
         const statusMap = summary.status || {};
+        const evts = data.event_counts || {};
         const dbNew = statusMap['New'] || 0;
         const dbReopened = statusMap['Reopened'] || 0;
         const dbOngoing = (summary.total || 0) - dbNew - dbReopened;
@@ -820,7 +821,7 @@ async function loadDashboard() {
         document.getElementById('statOngoing').textContent = dbOngoing;
         document.getElementById('statNew').textContent = dbNew;
         document.getElementById('statReopened').textContent = dbReopened;
-        document.getElementById('statCompleted').textContent = 0;
+        document.getElementById('statCompleted').textContent = evts.resolved || 0;
 
         // Tab counts
         document.getElementById('tabCountActive').textContent = summary.total || 0;

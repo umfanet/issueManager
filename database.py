@@ -81,6 +81,19 @@ def _init_tables(conn):
             UNIQUE(project_id, record_date),
             FOREIGN KEY (project_id) REFERENCES projects(id)
         );
+
+        CREATE TABLE IF NOT EXISTS issue_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            issue_id TEXT NOT NULL,
+            project_id INTEGER NOT NULL,
+            event_type TEXT NOT NULL,
+            event_date TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_events_issue
+            ON issue_events(issue_id);
+        CREATE INDEX IF NOT EXISTS idx_events_project_date
+            ON issue_events(project_id, event_date);
     ''')
     conn.commit()
 
@@ -179,7 +192,9 @@ def delete_project(project_id):
         (project_id,)
     )
     conn.execute('DELETE FROM issues WHERE project_id = ?', (project_id,))
+    conn.execute('DELETE FROM issue_events WHERE project_id = ?', (project_id,))
     conn.execute('DELETE FROM milestones WHERE project_id = ?', (project_id,))
+    conn.execute('DELETE FROM daily_snapshots WHERE project_id = ?', (project_id,))
     conn.execute('DELETE FROM projects WHERE id = ?', (project_id,))
     conn.commit()
     conn.close()
@@ -502,6 +517,73 @@ def get_all_timelines(project_id=None):
 
 
 # === Daily Snapshots ===
+
+def record_issue_events(project_id, record_date, active_ids, compare_result):
+    """Record lifecycle events (created/resolved/reopened) based on Compare result."""
+    conn = get_db()
+
+    # Get already-recorded events for this project+date to avoid duplicates
+    existing = conn.execute(
+        'SELECT issue_id, event_type FROM issue_events WHERE project_id = ? AND event_date = ?',
+        (project_id, record_date)
+    ).fetchall()
+    existing_set = {(r['issue_id'], r['event_type']) for r in existing}
+
+    def add_event(issue_id, event_type):
+        if (issue_id, event_type) not in existing_set:
+            conn.execute(
+                'INSERT INTO issue_events (issue_id, project_id, event_type, event_date) VALUES (?, ?, ?, ?)',
+                (issue_id, project_id, event_type, record_date)
+            )
+
+    # New issues → 'created'
+    for issue in compare_result.get('system_only', []):
+        iid = issue.get('ID', '')
+        if issue.get('Status') == 'New':
+            add_event(iid, 'created')
+        elif issue.get('Status') == 'Reopened':
+            add_event(iid, 'reopened')
+
+    # Reopened common issues (system Rejected)
+    for issue in compare_result.get('common', []):
+        if issue.get('Status') == 'Reopened':
+            add_event(issue.get('ID', ''), 'reopened')
+
+    # Resolved issues (in vendor but not in system)
+    for issue in compare_result.get('vendor_only', []):
+        add_event(issue.get('ID', ''), 'resolved')
+
+    conn.commit()
+    conn.close()
+
+
+def get_resolved_count(project_id, record_date):
+    """Get count of issues resolved on a specific date."""
+    conn = get_db()
+    row = conn.execute(
+        "SELECT COUNT(*) FROM issue_events WHERE project_id = ? AND event_date = ? AND event_type = 'resolved'",
+        (project_id, record_date)
+    ).fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+
+def get_latest_event_counts(project_id):
+    """Get event counts from the latest record date for dashboard display."""
+    conn = get_db()
+    latest = _latest_record_date(conn, project_id)
+    if not latest:
+        conn.close()
+        return {'resolved': 0, 'created': 0, 'reopened': 0}
+
+    rows = conn.execute(
+        'SELECT event_type, COUNT(*) as cnt FROM issue_events WHERE project_id = ? AND event_date = ? GROUP BY event_type',
+        (project_id, latest)
+    ).fetchall()
+    conn.close()
+    counts = {r['event_type']: r['cnt'] for r in rows}
+    return {'resolved': counts.get('resolved', 0), 'created': counts.get('created', 0), 'reopened': counts.get('reopened', 0)}
+
 
 def save_daily_snapshot(project_id, record_date, stats):
     """Save or update daily snapshot for trend tracking."""
