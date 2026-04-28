@@ -62,6 +62,19 @@ def _init_tables(conn):
 
         CREATE INDEX IF NOT EXISTS idx_milestones_project
             ON milestones(project_id);
+
+        CREATE TABLE IF NOT EXISTS daily_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            record_date TEXT NOT NULL,
+            total INTEGER NOT NULL DEFAULT 0,
+            ongoing INTEGER NOT NULL DEFAULT 0,
+            new_count INTEGER NOT NULL DEFAULT 0,
+            reopened INTEGER NOT NULL DEFAULT 0,
+            resolved INTEGER NOT NULL DEFAULT 0,
+            UNIQUE(project_id, record_date),
+            FOREIGN KEY (project_id) REFERENCES projects(id)
+        );
     ''')
     conn.commit()
 
@@ -464,6 +477,35 @@ def get_all_timelines(project_id=None):
 
     conn.close()
     return result
+
+
+# === Daily Snapshots ===
+
+def save_daily_snapshot(project_id, record_date, stats):
+    """Save or update daily snapshot for trend tracking."""
+    conn = get_db()
+    conn.execute(
+        '''INSERT INTO daily_snapshots (project_id, record_date, total, ongoing, new_count, reopened, resolved)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(project_id, record_date)
+           DO UPDATE SET total=?, ongoing=?, new_count=?, reopened=?, resolved=?''',
+        (project_id, record_date,
+         stats['total'], stats['ongoing'], stats['new'], stats['reopened'], stats['resolved'],
+         stats['total'], stats['ongoing'], stats['new'], stats['reopened'], stats['resolved'])
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_daily_snapshots(project_id):
+    """Get all daily snapshots for trend chart."""
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT record_date, total, ongoing, new_count, reopened, resolved FROM daily_snapshots WHERE project_id = ? ORDER BY record_date',
+        (project_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 
 def get_bottleneck_analysis(project_id=None):

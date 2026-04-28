@@ -633,6 +633,85 @@ async function deleteMilestoneItem(id) {
     }
 }
 
+// === Trend Chart ===
+function renderTrend(snapshots) {
+    const section = document.getElementById('trendSection');
+    const container = document.getElementById('trendChart');
+    if (!snapshots || snapshots.length < 2) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
+
+    const W = 700, H = 260, padL = 50, padR = 20, padT = 20, padB = 60;
+    const chartW = W - padL - padR, chartH = H - padT - padB;
+
+    // Data series
+    const dates = snapshots.map(s => s.record_date);
+    const series = [
+        {key: 'total', label: 'Total', color: '#1e3a5f', values: snapshots.map(s => s.total)},
+        {key: 'ongoing', label: 'Ongoing', color: '#0d6efd', values: snapshots.map(s => s.ongoing)},
+        {key: 'new_count', label: 'New', color: '#28a745', values: snapshots.map(s => s.new_count)},
+        {key: 'reopened', label: 'Reopened', color: '#fd7e14', values: snapshots.map(s => s.reopened)},
+        {key: 'resolved', label: 'Resolved', color: '#6c757d', values: snapshots.map(s => s.resolved)},
+    ];
+
+    const allVals = series.flatMap(s => s.values);
+    const maxVal = Math.max(...allVals, 1);
+    const n = dates.length;
+
+    const x = (i) => padL + (i / (n - 1)) * chartW;
+    const y = (v) => padT + chartH - (v / maxVal) * chartH;
+
+    let svg = '';
+
+    // Grid lines
+    const gridSteps = 5;
+    for (let i = 0; i <= gridSteps; i++) {
+        const val = Math.round((maxVal / gridSteps) * i);
+        const yPos = y(val);
+        svg += `<line x1="${padL}" y1="${yPos}" x2="${W - padR}" y2="${yPos}" stroke="#eee" stroke-width="1"/>`;
+        svg += `<text x="${padL - 8}" y="${yPos + 4}" text-anchor="end" fill="#999" font-size="10">${val}</text>`;
+    }
+
+    // Lines for each series
+    series.forEach(s => {
+        let path = '';
+        s.values.forEach((v, i) => {
+            const px = x(i), py = y(v);
+            path += i === 0 ? `M ${px} ${py}` : ` L ${px} ${py}`;
+        });
+        const strokeW = s.key === 'total' ? 2.5 : 1.5;
+        const dash = s.key === 'total' ? '' : 'stroke-dasharray="none"';
+        svg += `<path d="${path}" fill="none" stroke="${s.color}" stroke-width="${strokeW}" ${dash}/>`;
+        // Dots
+        s.values.forEach((v, i) => {
+            svg += `<circle cx="${x(i)}" cy="${y(v)}" r="3" fill="${s.color}"><title>${s.label}: ${v} (${dates[i]})</title></circle>`;
+        });
+    });
+
+    // X axis labels
+    const labelStep = n <= 10 ? 1 : n <= 20 ? 2 : Math.ceil(n / 10);
+    dates.forEach((d, i) => {
+        if (i % labelStep !== 0 && i !== n - 1) return;
+        const dt = new Date(d);
+        const label = `${dt.getMonth()+1}/${dt.getDate()}`;
+        const isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+        const color = isWeekend ? '#dc3545' : '#999';
+        svg += `<text x="${x(i)}" y="${H - padB + 18}" text-anchor="middle" fill="${color}" font-size="10">${label}</text>`;
+    });
+
+    // Legend
+    let legendX = padL;
+    series.forEach(s => {
+        svg += `<line x1="${legendX}" y1="${H - 10}" x2="${legendX + 16}" y2="${H - 10}" stroke="${s.color}" stroke-width="2"/>`;
+        svg += `<text x="${legendX + 20}" y="${H - 6}" fill="#555" font-size="10">${s.label}</text>`;
+        legendX += 90;
+    });
+
+    container.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="overflow:visible">${svg}</svg>`;
+}
+
 // === Tab Switching ===
 function showTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -651,6 +730,7 @@ async function loadTimelineData() {
         if (data.error) return;
         renderMilestones(data.milestones || []);
         renderTimelines(data.timelines);
+        renderTrend(data.snapshots);
         renderBottleneck(data.bottleneck);
     } catch (e) {
         console.error('Timeline load error:', e);
@@ -719,8 +799,9 @@ async function loadDashboard() {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('.tab-btn').classList.add('active');
 
-        // Timeline & bottleneck
+        // Timeline, trend & bottleneck
         renderTimelines(data.timelines);
+        renderTrend(data.snapshots);
         renderBottleneck(data.bottleneck);
 
         // Show dashboard & export bar

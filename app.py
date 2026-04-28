@@ -14,6 +14,7 @@ from database import (
     get_projects, create_project, rename_project, delete_project,
     get_project_issues, get_project_summary, get_known_issues_map,
     get_milestones, add_milestone, update_milestone, delete_milestone,
+    save_daily_snapshot, get_daily_snapshots,
 )
 from datetime import datetime
 
@@ -96,12 +97,14 @@ def project_dashboard(project_id):
         timelines = get_all_timelines(project_id=project_id)
         bottleneck = get_bottleneck_analysis(project_id=project_id)
         milestones = get_milestones(project_id)
+        snapshots = get_daily_snapshots(project_id)
         return jsonify({
             'issues': issues,
             'summary': summary,
             'timelines': timelines,
             'bottleneck': bottleneck,
             'milestones': milestones,
+            'snapshots': snapshots,
         })
     except Exception as e:
         import traceback
@@ -190,6 +193,15 @@ def compare():
         # Record status history in DB
         all_active = result['common'] + result['system_only']
         db_counts = upsert_issues(all_active, record_date=record_date, project_id=project_id)
+
+        # Save daily snapshot for trend tracking
+        save_daily_snapshot(project_id, current_date, {
+            'total': stats['summary']['total_active'],
+            'ongoing': stats['summary']['common'],
+            'new': stats['summary']['new'],
+            'reopened': stats['summary']['reopened'],
+            'resolved': stats['summary']['resolved'],
+        })
 
         return jsonify({
             'stats': stats,
