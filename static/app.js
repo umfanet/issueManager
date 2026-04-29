@@ -829,7 +829,6 @@ async function loadDashboard() {
         const total = summary.total || 0;
         const ongoing = total - assigned - reopened;
         document.getElementById('statTotal').textContent = total;
-        document.getElementById('statOngoing').textContent = Math.max(ongoing, 0);
         document.getElementById('statAssigned').textContent = assigned;
         document.getElementById('statReopened').textContent = reopened;
         document.getElementById('statResolved').textContent = resolved;
@@ -918,7 +917,6 @@ async function doCompare() {
         const total = data.stats.summary.total_active;
         const ongoing = total - assigned - reopened;
         document.getElementById('statTotal').textContent = total;
-        document.getElementById('statOngoing').textContent = Math.max(ongoing, 0);
         document.getElementById('statAssigned').textContent = assigned;
         document.getElementById('statReopened').textContent = reopened;
         document.getElementById('statResolved').textContent = resolved;
@@ -1043,7 +1041,6 @@ function copyForConfluence() {
     html += `<table style="border-collapse:separate;border-spacing:8px;margin-bottom:20px">
         <tr>
             <td style="padding:16px 28px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border-radius:8px;min-width:100px"><div style="font-size:2em;margin-bottom:4px">${cs('statTotal')}</div><div style="font-size:0.85em;opacity:0.9">Total Active</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#e8f0fe;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#0d6efd;font-weight:bold;margin-bottom:4px">${cs('statOngoing')}</div><div style="font-size:0.85em;color:#0d6efd">Ongoing</div></td>
             <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statAssigned')}</div><div style="font-size:0.85em;color:#28a745">Assigned</div></td>
             <td style="padding:16px 28px;text-align:center;background:#fff3cd;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#fd7e14;font-weight:bold;margin-bottom:4px">${cs('statReopened')}</div><div style="font-size:0.85em;color:#fd7e14">Reopened</div></td>
             <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statResolved')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
