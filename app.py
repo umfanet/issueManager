@@ -280,12 +280,18 @@ def compare_save():
         active_ids = [i.get('ID', '') for i in all_active]
         record_issue_events(project_id, current_date, active_ids, result)
 
+        # Snapshot based on lifecycle events (not vendor status)
+        assigned = sum(1 for i in result.get('system_only', []) if i.get('Status') == 'New')
+        reopened_cnt = sum(1 for i in result.get('common', []) if i.get('Status') == 'Reopened') \
+                     + sum(1 for i in result.get('system_only', []) if i.get('Status') == 'Reopened')
+        resolved_cnt = len(result.get('vendor_only', []))
+        total = stats['summary']['total_active']
         save_daily_snapshot(project_id, current_date, {
-            'total': stats['summary']['total_active'],
-            'ongoing': stats['summary']['common'],
-            'new': stats['summary']['new'],
-            'reopened': stats['summary']['reopened'],
-            'resolved': stats['summary']['resolved'],
+            'total': total,
+            'ongoing': total - assigned - reopened_cnt,
+            'new': assigned,
+            'reopened': reopened_cnt,
+            'resolved': resolved_cnt,
         })
 
         app.config['PENDING_COMPARE'] = None

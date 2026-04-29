@@ -707,7 +707,7 @@ function renderTrend(snapshots) {
     const series = [
         {key: 'total', label: 'Total', color: '#1e3a5f', values: snapshots.map(s => s.total)},
         {key: 'ongoing', label: 'Ongoing', color: '#0d6efd', values: snapshots.map(s => s.ongoing)},
-        {key: 'new_count', label: 'New', color: '#28a745', values: snapshots.map(s => s.new_count)},
+        {key: 'new_count', label: 'Assigned', color: '#28a745', values: snapshots.map(s => s.new_count)},
         {key: 'reopened', label: 'Reopened', color: '#fd7e14', values: snapshots.map(s => s.reopened)},
         {key: 'resolved', label: 'Resolved', color: '#6c757d', values: snapshots.map(s => s.resolved)},
     ];
@@ -821,21 +821,22 @@ async function loadDashboard() {
             return;
         }
 
-        // Summary cards - derive from DB status counts + event counts
-        const statusMap = summary.status || {};
+        // Summary cards - all from issue_events (lifecycle based)
         const evts = data.event_counts || {};
-        const dbNew = statusMap['New'] || 0;
-        const dbReopened = statusMap['Reopened'] || 0;
-        const dbOngoing = (summary.total || 0) - dbNew - dbReopened;
-        document.getElementById('statTotal').textContent = summary.total || 0;
-        document.getElementById('statOngoing').textContent = dbOngoing;
-        document.getElementById('statNew').textContent = dbNew;
-        document.getElementById('statReopened').textContent = dbReopened;
-        document.getElementById('statCompleted').textContent = evts.resolved || 0;
+        const assigned = evts.created || 0;
+        const reopened = evts.reopened || 0;
+        const resolved = evts.resolved || 0;
+        const total = summary.total || 0;
+        const ongoing = total - assigned - reopened;
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statOngoing').textContent = Math.max(ongoing, 0);
+        document.getElementById('statAssigned').textContent = assigned;
+        document.getElementById('statReopened').textContent = reopened;
+        document.getElementById('statResolved').textContent = resolved;
 
         // Tab counts
-        document.getElementById('tabCountActive').textContent = summary.total || 0;
-        document.getElementById('tabCountResolved').textContent = 0;
+        document.getElementById('tabCountActive').textContent = total;
+        document.getElementById('tabCountResolved').textContent = resolved;
 
         // Charts
         renderDonutChart('chartStatus', summary.status || {});
@@ -909,18 +910,22 @@ async function doCompare() {
 
         currentData = data;
 
-        // Summary cards
-        document.getElementById('statTotal').textContent = data.stats.summary.total_active;
-        document.getElementById('statOngoing').textContent = data.stats.summary.common;
-        const newCount = data.stats.summary.new || 0;
-        const reopenedCount = data.stats.summary.reopened || 0;
-        document.getElementById('statNew').textContent = newCount;
-        document.getElementById('statReopened').textContent = reopenedCount;
-        document.getElementById('statCompleted').textContent = data.stats.summary.resolved;
+        // Summary cards - lifecycle based (not vendor status)
+        const assigned = (data.system_only || []).filter(i => i.Status === 'New').length;
+        const reopened = (data.common || []).filter(i => i.Status === 'Reopened').length
+                       + (data.system_only || []).filter(i => i.Status === 'Reopened').length;
+        const resolved = (data.vendor_only || []).length;
+        const total = data.stats.summary.total_active;
+        const ongoing = total - assigned - reopened;
+        document.getElementById('statTotal').textContent = total;
+        document.getElementById('statOngoing').textContent = Math.max(ongoing, 0);
+        document.getElementById('statAssigned').textContent = assigned;
+        document.getElementById('statReopened').textContent = reopened;
+        document.getElementById('statResolved').textContent = resolved;
 
         // Tab counts
-        document.getElementById('tabCountActive').textContent = data.stats.summary.total_active;
-        document.getElementById('tabCountResolved').textContent = data.stats.summary.resolved;
+        document.getElementById('tabCountActive').textContent = total;
+        document.getElementById('tabCountResolved').textContent = resolved;
 
         // Charts
         renderDonutChart('chartStatus', data.stats.status);
@@ -1039,9 +1044,9 @@ function copyForConfluence() {
         <tr>
             <td style="padding:16px 28px;text-align:center;background:#1e3a5f;color:white;font-weight:bold;border-radius:8px;min-width:100px"><div style="font-size:2em;margin-bottom:4px">${cs('statTotal')}</div><div style="font-size:0.85em;opacity:0.9">Total Active</div></td>
             <td style="padding:16px 28px;text-align:center;background:#e8f0fe;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#0d6efd;font-weight:bold;margin-bottom:4px">${cs('statOngoing')}</div><div style="font-size:0.85em;color:#0d6efd">Ongoing</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statNew')}</div><div style="font-size:0.85em;color:#28a745">New</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#e8f8e8;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#28a745;font-weight:bold;margin-bottom:4px">${cs('statAssigned')}</div><div style="font-size:0.85em;color:#28a745">Assigned</div></td>
             <td style="padding:16px 28px;text-align:center;background:#fff3cd;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#fd7e14;font-weight:bold;margin-bottom:4px">${cs('statReopened')}</div><div style="font-size:0.85em;color:#fd7e14">Reopened</div></td>
-            <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statCompleted')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
+            <td style="padding:16px 28px;text-align:center;background:#f0f0f0;border-radius:8px;min-width:100px"><div style="font-size:2em;color:#6c757d;font-weight:bold;margin-bottom:4px">${cs('statResolved')}</div><div style="font-size:0.85em;color:#6c757d">Resolved</div></td>
         </tr>
     </table>`;
 
