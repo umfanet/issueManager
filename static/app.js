@@ -89,6 +89,20 @@ function onProjectChange() {
     const select = document.getElementById('projectSelect');
     currentProjectId = parseInt(select.value) || 1;
     localStorage.setItem('selectedProjectId', currentProjectId);
+
+    // Clear file inputs to prevent cross-project contamination
+    vendorFile.value = '';
+    systemFile.value = '';
+    vendorPasteArea.value = '';
+    document.getElementById('vendorName').textContent = '';
+    document.getElementById('systemName').textContent = '';
+    document.getElementById('vendorBox').classList.remove('has-file');
+    document.getElementById('systemBox').classList.remove('has-file');
+    vendorPasteBox.classList.remove('has-data');
+    document.getElementById('saveBtn').style.display = 'none';
+    document.getElementById('previewBanner').style.display = 'none';
+    checkReady();
+
     loadDashboard();
 }
 

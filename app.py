@@ -231,7 +231,7 @@ def compare():
         record_date = request.form.get('record_date', '').strip() or None
         current_date = record_date or date_cls.today().isoformat()
 
-        known_map = get_known_issues_map(current_date=current_date)
+        known_map = get_known_issues_map(project_id, current_date=current_date)
         result = compare_issues(vendor_issues, system_issues, known_map=known_map)
         stats = generate_statistics(result)
 

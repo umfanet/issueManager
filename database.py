@@ -268,8 +268,8 @@ def delete_milestone(milestone_id):
 
 # === Issue Operations ===
 
-def get_known_issues_map(current_date=None):
-    """Return dict of issue IDs -> {module, owner} for issues that existed BEFORE the given date.
+def get_known_issues_map(project_id, current_date=None):
+    """Return dict of issue IDs -> {module, owner} for issues in this project that existed BEFORE the given date.
     Uses first_seen_date to distinguish:
       - first_seen_date < current_date → was known before → Reopened
       - first_seen_date = current_date → first appeared today → New (even on re-compare)
@@ -277,11 +277,14 @@ def get_known_issues_map(current_date=None):
     conn = get_db()
     if current_date:
         rows = conn.execute(
-            "SELECT id, module, owner FROM issues WHERE first_seen_date < ?",
-            (current_date,)
+            "SELECT id, module, owner FROM issues WHERE project_id = ? AND first_seen_date < ?",
+            (project_id, current_date)
         ).fetchall()
     else:
-        rows = conn.execute('SELECT id, module, owner FROM issues').fetchall()
+        rows = conn.execute(
+            'SELECT id, module, owner FROM issues WHERE project_id = ?',
+            (project_id,)
+        ).fetchall()
     conn.close()
     return {r['id']: {'module': r['module'] or '', 'owner': r['owner'] or ''} for r in rows}
 
