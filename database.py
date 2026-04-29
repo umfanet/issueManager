@@ -121,6 +121,8 @@ def _migrate(conn):
     proj_columns = [row[1] for row in conn.execute('PRAGMA table_info(projects)').fetchall()]
     if 'notes' not in proj_columns:
         conn.execute("ALTER TABLE projects ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
+    if 'group_name' not in proj_columns:
+        conn.execute("ALTER TABLE projects ADD COLUMN group_name TEXT NOT NULL DEFAULT ''")
 
     # Create index after columns are guaranteed to exist
     conn.execute('CREATE INDEX IF NOT EXISTS idx_issues_project ON issues(project_id)')
@@ -134,33 +136,39 @@ def get_projects():
     """Return list of all projects."""
     conn = get_db()
     rows = conn.execute(
-        'SELECT id, name, created_at, last_accessed FROM projects ORDER BY id'
+        'SELECT id, name, created_at, last_accessed, group_name FROM projects ORDER BY group_name, name'
     ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def create_project(name):
+def create_project(name, group_name=''):
     """Create a new project. Returns the new project dict."""
     conn = get_db()
     now = datetime.now().isoformat()
     cursor = conn.execute(
-        'INSERT INTO projects (name, created_at) VALUES (?, ?)',
-        (name.strip(), now)
+        'INSERT INTO projects (name, created_at, group_name) VALUES (?, ?, ?)',
+        (name.strip(), now, group_name.strip())
     )
     project_id = cursor.lastrowid
     conn.commit()
     conn.close()
-    return {'id': project_id, 'name': name.strip(), 'created_at': now}
+    return {'id': project_id, 'name': name.strip(), 'created_at': now, 'group_name': group_name.strip()}
 
 
-def rename_project(project_id, new_name):
-    """Rename a project."""
+def rename_project(project_id, new_name, group_name=None):
+    """Rename a project and optionally change group."""
     conn = get_db()
-    conn.execute(
-        'UPDATE projects SET name = ? WHERE id = ?',
-        (new_name.strip(), project_id)
-    )
+    if group_name is not None:
+        conn.execute(
+            'UPDATE projects SET name = ?, group_name = ? WHERE id = ?',
+            (new_name.strip(), group_name.strip(), project_id)
+        )
+    else:
+        conn.execute(
+            'UPDATE projects SET name = ? WHERE id = ?',
+            (new_name.strip(), project_id)
+        )
     conn.commit()
     conn.close()
 

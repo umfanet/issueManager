@@ -61,7 +61,8 @@ def add_project():
     if not name:
         return jsonify({'error': '프로젝트 이름을 입력해주세요.'}), 400
     try:
-        project = create_project(name)
+        group_name = (data.get('group_name') or '').strip()
+        project = create_project(name, group_name=group_name)
         return jsonify(project), 201
     except Exception as e:
         return jsonify({'error': f'프로젝트 생성 실패: {e}'}), 400
@@ -74,8 +75,9 @@ def update_project(project_id):
     if not name:
         return jsonify({'error': '프로젝트 이름을 입력해주세요.'}), 400
     try:
-        rename_project(project_id, name)
-        return jsonify({'id': project_id, 'name': name})
+        group_name = data.get('group_name')
+        rename_project(project_id, name, group_name=group_name)
+        return jsonify({'id': project_id, 'name': name, 'group_name': group_name or ''})
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 

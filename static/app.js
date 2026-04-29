@@ -66,11 +66,32 @@ async function loadProjects() {
         const data = await resp.json();
         const select = document.getElementById('projectSelect');
         select.innerHTML = '';
-        (data.projects || []).forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            select.appendChild(opt);
+        const projects = data.projects || [];
+        const groups = {};
+        projects.forEach(p => {
+            const g = p.group_name || '';
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(p);
+        });
+        Object.entries(groups).forEach(([groupName, items]) => {
+            if (groupName && Object.keys(groups).length > 1) {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = groupName;
+                items.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = p.name;
+                    optgroup.appendChild(opt);
+                });
+                select.appendChild(optgroup);
+            } else {
+                items.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.textContent = groupName ? `${p.name}` : p.name;
+                    select.appendChild(opt);
+                });
+            }
         });
 
         // Restore last selection
@@ -107,13 +128,14 @@ function onProjectChange() {
 }
 
 async function addProject() {
-    const name = prompt('새 프로젝트 이름:');
+    const group_name = prompt('그룹명 (업체명 등, 생략 가능):') || '';
+    const name = prompt('프로젝트 이름:');
     if (!name || !name.trim()) return;
     try {
         const resp = await fetch('/api/projects', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim()}),
+            body: JSON.stringify({name: name.trim(), group_name: group_name.trim()}),
         });
         const data = await resp.json();
         if (!resp.ok) {
@@ -1160,14 +1182,26 @@ async function showLanding() {
 
         const list = document.getElementById('landingProjectList');
         list.innerHTML = '';
+
+        // Group projects by group_name
+        const groups = {};
         projects.forEach(p => {
-            const dateText = p.last_accessed ? new Date(p.last_accessed).toLocaleDateString() : '';
-            list.innerHTML += `
-                <div class="landing-project-item" onclick="selectProjectFromLanding(${p.id})">
-                    <span class="landing-project-icon">📁</span>
-                    <span class="landing-project-name">${escHtml(p.name)}</span>
-                    <span class="landing-project-date">${dateText}</span>
-                </div>`;
+            const g = p.group_name || '미분류';
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(p);
+        });
+
+        Object.entries(groups).forEach(([groupName, items]) => {
+            list.innerHTML += `<div class="landing-group-label">${escHtml(groupName)}</div>`;
+            items.forEach(p => {
+                const dateText = p.last_accessed ? new Date(p.last_accessed).toLocaleDateString() : '';
+                list.innerHTML += `
+                    <div class="landing-project-item" onclick="selectProjectFromLanding(${p.id})">
+                        <span class="landing-project-icon">📁</span>
+                        <span class="landing-project-name">${escHtml(p.name)}</span>
+                        <span class="landing-project-date">${dateText}</span>
+                    </div>`;
+            });
         });
 
         document.getElementById('projectLanding').style.display = 'flex';
@@ -1192,13 +1226,14 @@ async function selectProjectFromLanding(projectId) {
 }
 
 async function addProjectFromLanding() {
-    const name = prompt('새 프로젝트 이름:');
+    const group_name = prompt('그룹명 (업체명 등, 생략 가능):') || '';
+    const name = prompt('프로젝트 이름:');
     if (!name || !name.trim()) return;
     try {
         const resp = await fetch('/api/projects', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim()}),
+            body: JSON.stringify({name: name.trim(), group_name: group_name.trim()}),
         });
         const data = await resp.json();
         if (!resp.ok) {
