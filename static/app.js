@@ -720,7 +720,9 @@ async function deleteMilestoneItem(id) {
 function renderNotes(notes) {
     const display = document.getElementById('notesDisplay');
     if (notes && notes.trim()) {
-        display.innerHTML = escHtml(notes).replace(/\n/g, '<br>');
+        display.innerHTML = escHtml(notes)
+            .replace(/\n/g, '<br>')
+            .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" style="color:#0d6efd">$1</a>');
     } else {
         display.innerHTML = '<span style="color:#999">메모를 추가하려면 ✎ 버튼을 클릭하세요.</span>';
     }
