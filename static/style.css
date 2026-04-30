@@ -72,6 +72,77 @@ body {
     font-size: 0.78em;
     color: #999;
 }
+/* === Project Modal === */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-card {
+    background: white;
+    border-radius: 14px;
+    padding: 32px;
+    width: 400px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-card h2 {
+    font-size: 1.3em;
+    color: #1e3a5f;
+    margin-bottom: 20px;
+}
+.modal-field {
+    margin-bottom: 16px;
+}
+.modal-field label {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+}
+.modal-field input, .modal-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c0c8d4;
+    border-radius: 8px;
+    font-size: 0.95em;
+    outline: none;
+}
+.modal-field input:focus, .modal-field select:focus {
+    border-color: #0d6efd;
+}
+.modal-group-row {
+    display: flex;
+    gap: 8px;
+}
+.modal-group-row select {
+    flex: 1;
+}
+.modal-group-add {
+    background: #1e3a5f !important;
+    color: white !important;
+    border: none !important;
+    flex-shrink: 0;
+}
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+.modal-cancel {
+    background: #f0f2f5;
+    color: #555;
+}
+.modal-cancel:hover {
+    background: #e0e3e8;
+}
+
 .landing-group-label {
     font-size: 0.8em;
     font-weight: 700;

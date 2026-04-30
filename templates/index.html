@@ -182,6 +182,28 @@
     </div>
     </div><!-- /app-main -->
 
+    <!-- Project Create/Edit Modal -->
+    <div class="modal-overlay" id="projectModal" style="display:none">
+        <div class="modal-card">
+            <h2 id="modalTitle">새 프로젝트</h2>
+            <div class="modal-field">
+                <label>그룹</label>
+                <div class="modal-group-row">
+                    <select id="modalGroupSelect"><option value="">미분류</option></select>
+                    <button class="btn-icon modal-group-add" onclick="addGroupInModal()" title="새 그룹">+</button>
+                </div>
+            </div>
+            <div class="modal-field">
+                <label>프로젝트 이름</label>
+                <input type="text" id="modalProjectName" placeholder="예: Camera ISP">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-primary" id="modalSaveBtn" onclick="saveProjectModal()">생성</button>
+                <button class="btn modal-cancel" onclick="closeProjectModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/app.js"></script>
 </body>
 </html>

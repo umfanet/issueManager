@@ -127,52 +127,108 @@ function onProjectChange() {
     loadDashboard();
 }
 
-async function addProject() {
-    const group_name = prompt('그룹명 (업체명 등, 생략 가능):') || '';
-    const name = prompt('프로젝트 이름:');
-    if (!name || !name.trim()) return;
-    try {
-        const resp = await fetch('/api/projects', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim(), group_name: group_name.trim()}),
+// === Project Modal ===
+let _modalMode = 'create'; // 'create' or 'edit'
+let _modalCallback = null;
+
+function openProjectModal(mode, callback) {
+    _modalMode = mode;
+    _modalCallback = callback;
+    const modal = document.getElementById('projectModal');
+    const title = document.getElementById('modalTitle');
+    const nameInput = document.getElementById('modalProjectName');
+    const saveBtn = document.getElementById('modalSaveBtn');
+    const groupSelect = document.getElementById('modalGroupSelect');
+
+    // Populate group dropdown from existing projects
+    groupSelect.innerHTML = '<option value="">미분류</option>';
+    const existingGroups = new Set();
+    document.querySelectorAll('#projectSelect optgroup').forEach(og => existingGroups.add(og.label));
+    // Also scan from API data
+    fetch('/api/projects').then(r => r.json()).then(data => {
+        (data.projects || []).forEach(p => { if (p.group_name) existingGroups.add(p.group_name); });
+        existingGroups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = g;
+            groupSelect.appendChild(opt);
         });
-        const data = await resp.json();
-        if (!resp.ok) {
-            alert(data.error || '프로젝트 생성 실패');
-            return;
+        if (mode === 'edit' && currentProjectId) {
+            const proj = (data.projects || []).find(p => p.id === currentProjectId);
+            if (proj) {
+                nameInput.value = proj.name;
+                groupSelect.value = proj.group_name || '';
+            }
         }
-        await loadProjects();
-        // Select the new project
-        document.getElementById('projectSelect').value = data.id;
-        onProjectChange();
-    } catch (e) {
-        alert('프로젝트 생성 중 오류: ' + e.message);
+    });
+
+    if (mode === 'create') {
+        title.textContent = '새 프로젝트';
+        saveBtn.textContent = '생성';
+        nameInput.value = '';
+    } else {
+        title.textContent = '프로젝트 편집';
+        saveBtn.textContent = '저장';
     }
+
+    modal.style.display = 'flex';
+    nameInput.focus();
+    nameInput.onkeydown = (e) => { if (e.key === 'Enter') saveProjectModal(); };
+}
 }
 
-async function renameProject() {
-    if (!currentProjectId) return;
-    const select = document.getElementById('projectSelect');
-    const current = select.options[select.selectedIndex].textContent;
-    const name = prompt('프로젝트 이름 변경:', current);
-    if (!name || !name.trim() || name.trim() === current) return;
+function closeProjectModal() {
+    document.getElementById('projectModal').style.display = 'none';
+}
+
+function addGroupInModal() {
+    const name = prompt('새 그룹명:');
+    if (!name || !name.trim()) return;
+    const select = document.getElementById('modalGroupSelect');
+    // Check duplicate
+    for (let opt of select.options) { if (opt.value === name.trim()) { select.value = name.trim(); return; } }
+    const opt = document.createElement('option');
+    opt.value = name.trim();
+    opt.textContent = name.trim();
+    select.appendChild(opt);
+    select.value = name.trim();
+}
+
+async function saveProjectModal() {
+    const name = document.getElementById('modalProjectName').value.trim();
+    const group_name = document.getElementById('modalGroupSelect').value;
+    if (!name) { alert('프로젝트 이름을 입력해주세요.'); return; }
+
     try {
-        const resp = await fetch(`/api/projects/${currentProjectId}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim()}),
-        });
-        const data = await resp.json();
-        if (!resp.ok) {
-            alert(data.error || '이름 변경 실패');
-            return;
+        if (_modalMode === 'create') {
+            const resp = await fetch('/api/projects', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, group_name}),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { alert(data.error || '생성 실패'); return; }
+            closeProjectModal();
+            if (_modalCallback) _modalCallback(data.id);
+            else { await loadProjects(); document.getElementById('projectSelect').value = data.id; onProjectChange(); }
+        } else {
+            const resp = await fetch(`/api/projects/${currentProjectId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, group_name}),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { alert(data.error || '변경 실패'); return; }
+            closeProjectModal();
+            await loadProjects();
         }
-        await loadProjects();
     } catch (e) {
         alert('오류: ' + e.message);
     }
 }
+
+function addProject() { openProjectModal('create'); }
+function renameProject() { if (currentProjectId) openProjectModal('edit'); }
 
 async function deleteProject() {
     if (!currentProjectId || currentProjectId === 1) {
@@ -1225,25 +1281,10 @@ async function selectProjectFromLanding(projectId) {
     loadDashboard();
 }
 
-async function addProjectFromLanding() {
-    const group_name = prompt('그룹명 (업체명 등, 생략 가능):') || '';
-    const name = prompt('프로젝트 이름:');
-    if (!name || !name.trim()) return;
-    try {
-        const resp = await fetch('/api/projects', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name: name.trim(), group_name: group_name.trim()}),
-        });
-        const data = await resp.json();
-        if (!resp.ok) {
-            alert(data.error || '프로젝트 생성 실패');
-            return;
-        }
-        selectProjectFromLanding(data.id);
-    } catch (e) {
-        alert('오류: ' + e.message);
-    }
+function addProjectFromLanding() {
+    openProjectModal('create', (newId) => {
+        selectProjectFromLanding(newId);
+    });
 }
 
 // === Init ===
