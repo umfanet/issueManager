@@ -175,7 +175,6 @@ function openProjectModal(mode, callback) {
     nameInput.focus();
     nameInput.onkeydown = (e) => { if (e.key === 'Enter') saveProjectModal(); };
 }
-}
 
 function closeProjectModal() {
     document.getElementById('projectModal').style.display = 'none';
